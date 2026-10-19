@@ -1,0 +1,109 @@
+# main dalına gelen her değişiklikte testler çalışır. manifest.json'daki sürüm için henüz bir
+# etiket (v1.2.3) yoksa: paket üretilir, GitHub Release oluşturulur ve Chrome Web Store ile
+# Edge Add-ons'a yüklenip incelemeye gönderilir. Sürümü artırmak: `npm run bump` (README → Yayın).
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm test
+
+  release:
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      new: ${{ steps.ver.outputs.new }}
+      zip: ${{ steps.build.outputs.zip }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Sürüm yeni mi?
+        id: ver
+        run: |
+          V=$(node -p "require('./extension/manifest.json').version")
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$V" >/dev/null; then
+            echo "new=false" >> "$GITHUB_OUTPUT"
+            echo "v$V zaten yayınlanmış; mağazalara yükleme yapılmayacak. Yeni sürüm için: npm run bump" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "new=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Paketle
+        id: build
+        if: steps.ver.outputs.new == 'true'
+        run: node tools/build-zip.mjs
+      - uses: actions/upload-artifact@v4
+        if: steps.ver.outputs.new == 'true'
+        with:
+          name: package
+          path: ${{ steps.build.outputs.zip }}
+      - name: GitHub Release
+        if: steps.ver.outputs.new == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v${{ steps.ver.outputs.version }}" "${{ steps.build.outputs.zip }}" \
+            --title "ProxyScout ${{ steps.ver.outputs.version }}" --generate-notes --target "${{ github.sha }}"
+
+  chrome:
+    needs: release
+    if: needs.release.outputs.new == 'true'
+    runs-on: ubuntu-latest
+    env:
+      CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+      CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+      CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+      CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+      CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: package
+          path: dist
+      - name: Chrome Web Store'a yükle
+        run: node tools/publish.mjs chrome "${{ needs.release.outputs.zip }}"
+
+  edge:
+    needs: release
+    if: needs.release.outputs.new == 'true'
+    runs-on: ubuntu-latest
+    env:
+      EDGE_PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
+      EDGE_CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
+      EDGE_API_KEY: ${{ secrets.EDGE_API_KEY }}
+      VERSION: ${{ needs.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: package
+          path: dist
+      - name: Edge Add-ons'a yükle
+        run: node tools/publish.mjs edge "${{ needs.release.outputs.zip }}"

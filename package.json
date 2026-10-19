@@ -1,0 +1,18 @@
+{
+  "name": "proxyscout",
+  "version": "1.2.0",
+  "private": true,
+  "description": "Ücretsiz proxy listelerini indirip test eden ve tek tıkla tarayıcı trafiğini yönlendiren Chrome/Edge eklentisi",
+  "license": "GPL-3.0-only",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/logic.test.mjs tests/i18n.test.mjs tests/sync.test.mjs",
+    "build": "node tools/build-zip.mjs",
+    "bump": "node tools/bump-version.mjs",
+    "publish:chrome": "node tools/publish.mjs chrome",
+    "publish:edge": "node tools/publish.mjs edge"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
