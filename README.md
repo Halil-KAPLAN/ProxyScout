@@ -216,6 +216,9 @@ git push
 
 Pushes without a version bump only run the tests.
 
+To check the store secrets without uploading anything: **Actions → Release → Run workflow → "Yalnızca
+mağaza anahtarlarını sına"**.
+
 ### One-time store setup
 
 Store descriptions, permission justifications and images (EN/TR):

@@ -1,5 +1,6 @@
 // Paketi mağazaya yükler ve incelemeye gönderir.
 // Kullanım: node tools/publish.mjs <chrome|edge> <paket.zip>
+//           node tools/publish.mjs <chrome|edge> --check   (yalnızca anahtarları sınar, hiçbir şey yüklemez)
 //
 // Chrome Web Store (API v2) ortam değişkenleri:
 //   CWS_CLIENT_ID, CWS_CLIENT_SECRET, CWS_REFRESH_TOKEN  — chromewebstore kapsamlı OAuth istemcisi
@@ -26,9 +27,10 @@ async function check(res, what) {
   }
 }
 
-async function chrome(zip) {
-  const need = ['CWS_CLIENT_ID', 'CWS_CLIENT_SECRET', 'CWS_REFRESH_TOKEN', 'CWS_PUBLISHER_ID', 'CWS_EXTENSION_ID'];
-  if (missing(need).length) return console.log(`Chrome Web Store atlandı (eksik: ${missing(need).join(', ')})`);
+const CWS_VARS = ['CWS_CLIENT_ID', 'CWS_CLIENT_SECRET', 'CWS_REFRESH_TOKEN', 'CWS_PUBLISHER_ID', 'CWS_EXTENSION_ID'];
+const EDGE_VARS = ['EDGE_PRODUCT_ID', 'EDGE_CLIENT_ID', 'EDGE_API_KEY'];
+
+async function chromeAuth() {
   const tok = await check(
     await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
@@ -37,9 +39,25 @@ async function chrome(zip) {
     }),
     'Erişim anahtarı',
   );
-  const auth = { Authorization: `Bearer ${tok.access_token}` };
-  const item = `publishers/${env.CWS_PUBLISHER_ID}/items/${env.CWS_EXTENSION_ID}`;
-  const base = 'https://chromewebstore.googleapis.com';
+  return {
+    auth: { Authorization: `Bearer ${tok.access_token}` },
+    item: `publishers/${env.CWS_PUBLISHER_ID}/items/${env.CWS_EXTENSION_ID}`,
+    base: 'https://chromewebstore.googleapis.com',
+  };
+}
+
+// Erişim anahtarı alınabiliyor ve öğe okunabiliyorsa istemci, refresh token ve kimlikler doğrudur.
+async function chromeCheck() {
+  if (missing(CWS_VARS).length) throw new Error(`Chrome Web Store: eksik gizli değerler: ${missing(CWS_VARS).join(', ')}`);
+  const { auth, item, base } = await chromeAuth();
+  console.log('Chrome Web Store: erişim anahtarı alındı (CWS_CLIENT_ID, CWS_CLIENT_SECRET, CWS_REFRESH_TOKEN doğru).');
+  const st = await check(await fetch(`${base}/v2/${item}:fetchStatus`, { headers: auth }), 'Öğe durumu (CWS_PUBLISHER_ID / CWS_EXTENSION_ID)');
+  console.log('Chrome Web Store: öğe okundu (CWS_PUBLISHER_ID, CWS_EXTENSION_ID doğru) →', JSON.stringify(st));
+}
+
+async function chrome(zip) {
+  if (missing(CWS_VARS).length) return console.log(`Chrome Web Store atlandı (eksik: ${missing(CWS_VARS).join(', ')})`);
+  const { auth, item, base } = await chromeAuth();
 
   let up = await check(await fetch(`${base}/upload/v2/${item}:upload`, { method: 'POST', headers: { ...auth, 'Content-Type': 'application/zip' }, body: zip }), 'Yükleme');
   console.log('Yükleme yanıtı:', JSON.stringify(up));
@@ -54,11 +72,23 @@ async function chrome(zip) {
   console.log('Chrome Web Store: incelemeye gönderildi →', JSON.stringify(pub));
 }
 
+const edgeBase = () => `https://api.addons.microsoftedge.microsoft.com/v1/products/${env.EDGE_PRODUCT_ID}/submissions`;
+const edgeHeaders = () => ({ Authorization: `ApiKey ${env.EDGE_API_KEY}`, 'X-ClientID': env.EDGE_CLIENT_ID });
+
+// Edge API'de salt okunur bir uç nokta yok; var olmayan bir işlemin durumu sorulur.
+// 401/403 anahtarın ya da istemci kimliğinin yanlış olduğunu, başka her yanıt kimliğin kabul edildiğini gösterir.
+async function edgeCheck() {
+  if (missing(EDGE_VARS).length) throw new Error(`Edge Add-ons: eksik gizli değerler: ${missing(EDGE_VARS).join(', ')}`);
+  const res = await fetch(`${edgeBase()}/draft/package/operations/00000000-0000-0000-0000-000000000000`, { headers: edgeHeaders() });
+  const body = (await res.text()).slice(0, 300);
+  if (res.status === 401 || res.status === 403) throw new Error(`Edge Add-ons: kimlik reddedildi (HTTP ${res.status}). EDGE_CLIENT_ID / EDGE_API_KEY yanlış ya da süresi dolmuş. ${body}`);
+  console.log(`Edge Add-ons: kimlik kabul edildi (EDGE_CLIENT_ID, EDGE_API_KEY doğru). Deneme sorgusu HTTP ${res.status}: ${body}`);
+}
+
 async function edge(zip) {
-  const need = ['EDGE_PRODUCT_ID', 'EDGE_CLIENT_ID', 'EDGE_API_KEY'];
-  if (missing(need).length) return console.log(`Edge Add-ons atlandı (eksik: ${missing(need).join(', ')})`);
-  const base = `https://api.addons.microsoftedge.microsoft.com/v1/products/${env.EDGE_PRODUCT_ID}/submissions`;
-  const headers = { Authorization: `ApiKey ${env.EDGE_API_KEY}`, 'X-ClientID': env.EDGE_CLIENT_ID };
+  if (missing(EDGE_VARS).length) return console.log(`Edge Add-ons atlandı (eksik: ${missing(EDGE_VARS).join(', ')})`);
+  const base = edgeBase();
+  const headers = edgeHeaders();
   const opId = (res) => (res.headers.get('location') || '').split('/').filter(Boolean).pop();
 
   async function wait(url, what) {
@@ -89,11 +119,14 @@ async function edge(zip) {
 }
 
 if (!['chrome', 'edge'].includes(store) || !zipPath) {
-  console.error('Kullanım: node tools/publish.mjs <chrome|edge> <paket.zip>');
+  console.error('Kullanım: node tools/publish.mjs <chrome|edge> <paket.zip|--check>');
   process.exit(2);
 }
-const zip = readFileSync(zipPath);
-await (store === 'chrome' ? chrome(zip) : edge(zip)).catch((e) => {
+const run =
+  zipPath === '--check'
+    ? store === 'chrome' ? chromeCheck() : edgeCheck()
+    : store === 'chrome' ? chrome(readFileSync(zipPath)) : edge(readFileSync(zipPath));
+await run.catch((e) => {
   console.error(e.message);
   process.exit(1);
 });

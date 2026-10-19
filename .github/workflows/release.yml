@@ -1,12 +1,19 @@
 # main dalına gelen her değişiklikte testler çalışır. manifest.json'daki sürüm için henüz bir
 # etiket (v1.2.3) yoksa: paket üretilir, GitHub Release oluşturulur ve Chrome Web Store ile
 # Edge Add-ons'a yüklenip incelemeye gönderilir. Sürümü artırmak: `npm run bump` (README → Yayın).
+# Actions → Release → Run workflow → "Yalnızca mağaza anahtarlarını sına" seçilirse hiçbir şey
+# yüklenmez; yalnızca gizli değerlerin doğru olup olmadığı denenir.
 name: Release
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      check_only:
+        description: Yalnızca mağaza anahtarlarını sına (hiçbir şey yüklenmez)
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -25,8 +32,32 @@ jobs:
           node-version: 22
       - run: npm test
 
+  check-credentials:
+    if: ${{ inputs.check_only }}
+    runs-on: ubuntu-latest
+    env:
+      CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+      CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+      CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+      CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
+      CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+      EDGE_PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
+      EDGE_CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
+      EDGE_API_KEY: ${{ secrets.EDGE_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Chrome Web Store anahtarları
+        run: node tools/publish.mjs chrome --check
+      - name: Edge Add-ons anahtarları
+        if: ${{ !cancelled() }}
+        run: node tools/publish.mjs edge --check
+
   release:
     needs: test
+    if: ${{ !inputs.check_only }}
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.ver.outputs.version }}

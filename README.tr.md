@@ -210,6 +210,9 @@ git push
 
 Sürüm artırılmadan yapılan gönderimlerde yalnızca testler çalışır.
 
+Mağaza gizli değerlerini hiçbir şey yüklemeden sınamak için: **Actions → Release → Run workflow →
+"Yalnızca mağaza anahtarlarını sına"**.
+
 ### Bir kerelik mağaza kurulumu
 
 Mağaza açıklamaları, izin gerekçeleri ve görseller (TR/EN): [`store/LISTING.md`](store/LISTING.md) ve
