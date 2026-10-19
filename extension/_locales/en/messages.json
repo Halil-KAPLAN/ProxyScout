@@ -1,0 +1,5 @@
+{
+  "extName": { "message": "ProxyScout — Proxy Finder & Switcher" },
+  "extShort": { "message": "ProxyScout" },
+  "extDesc": { "message": "Downloads free proxy lists, tests them, sorts out the working ones and routes your browser traffic through the proxy you pick in one click." }
+}

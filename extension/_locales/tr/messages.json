@@ -1,0 +1,5 @@
+{
+  "extName": { "message": "ProxyScout — Proxy Bulucu ve Değiştirici" },
+  "extShort": { "message": "ProxyScout" },
+  "extDesc": { "message": "Ücretsiz proxy listelerini indirir, test eder, çalışanları ayıklar ve tek tıkla tarayıcı trafiğini seçtiğiniz proxy'ye yönlendirir." }
+}

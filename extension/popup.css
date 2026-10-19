@@ -1,0 +1,59 @@
+body { width: 380px; min-height: 480px; display: flex; flex-direction: column; }
+.head { display: flex; align-items: center; gap: 9px; padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.head img { width: 24px; height: 24px; }
+.head b { font-size: 15px; flex: 1; }
+
+.card { margin: 12px 12px 0; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); }
+.card.on { border-color: color-mix(in srgb, var(--ok) 45%, var(--line)); background: var(--ok-soft); }
+.card.bad { border-color: color-mix(in srgb, var(--err) 45%, var(--line)); }
+.card-top { display: flex; align-items: center; gap: 10px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--faint); flex: none; }
+.card.on .dot { background: var(--ok); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ok) 25%, transparent); }
+.card.bad .dot { background: var(--err); }
+.card-text { min-width: 0; }
+.card-text b { display: block; font-family: var(--mono); font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-text small { color: var(--muted); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+.auto { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; cursor: pointer; }
+.auto .switch { width: 34px; height: 20px; }
+.auto .switch span::after { width: 14px; height: 14px; }
+.auto .switch input:checked + span::after { transform: translateX(14px); }
+.ip { margin-top: 8px; font: 12px var(--mono); color: var(--muted); }
+
+.job { margin: 10px 12px 0; padding: 10px 12px; border-radius: 10px; background: var(--blue-soft); }
+.job-line { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 7px; font-size: 12px; }
+
+.list-head { display: flex; align-items: center; gap: 8px; padding: 12px 12px 6px; }
+.tabs { display: flex; background: var(--bg-2); border: 1px solid var(--line); border-radius: 8px; padding: 2px; }
+.tabs button { border: 0; background: none; padding: 4px 9px; border-radius: 6px; cursor: pointer; color: var(--muted); font-size: 12px; }
+.tabs button.on { background: var(--panel-2); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+.list-head select { flex: 1; height: 28px; min-width: 0; font-size: 12px; }
+
+.list { flex: 1; overflow-y: auto; max-height: 300px; padding: 0 6px 6px; }
+.item { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 8px 8px; border-radius: 8px; cursor: pointer; }
+.item:hover { background: var(--row-hover); }
+.item.active { background: var(--ok-soft); box-shadow: inset 3px 0 0 var(--ok); }
+.item .a { font: 12.5px var(--mono); }
+.item .m { grid-column: 1; font-size: 11.5px; color: var(--muted); }
+.item .lat { grid-row: 1 / span 2; grid-column: 2; align-self: center; }
+.empty { padding: 26px 16px; text-align: center; color: var(--muted); }
+
+.foot { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); background: var(--panel); }
+.foot .primary { flex: 1; justify-content: center; }
+
+/* Bağlanma durumu ve bayraklar */
+.card.connecting { border-color: color-mix(in srgb, var(--warn) 45%, var(--line)); background: var(--warn-soft); }
+.card.connecting .dot { background: var(--warn); animation: pulse 1s infinite; }
+.card-text b .spin { color: var(--warn); }
+.item.busy { background: var(--warn-soft); }
+.item.busy .lat { color: var(--warn); }
+.item .a .flag { font-size: 14px; }
+
+.card-btns { display: flex; gap: 6px; }
+.card.bad { background: var(--err-soft); }
+.card.bad small { color: var(--err); }
+.tabs button { padding: 4px 7px; white-space: nowrap; }
+.item .m .ok { color: var(--ok); }
+.item .m .warn { color: var(--warn); }
+#toggleWrap[data-state='wait'] input:checked + span { background: var(--warn); }
+#toggleWrap[data-state='bad'] input:checked + span { background: var(--err); }

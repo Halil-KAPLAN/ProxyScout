@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>ProxyScout</title>
+  <link rel="preload" href="fonts/TwemojiCountryFlags.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="common.css" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <header class="head">
+    <img src="icons/brand32.png" alt="" />
+    <b>ProxyScout</b>
+    <label class="switch big" id="toggleWrap" data-i18n-title="toggle.title"><input type="checkbox" id="toggle" /><span></span></label>
+  </header>
+
+  <section class="card" id="card">
+    <div class="card-top">
+      <span class="dot"></span>
+      <div class="card-text">
+        <b id="cTitle"></b>
+        <small id="cSub"></small>
+      </div>
+    </div>
+    <div class="card-actions">
+      <div class="card-btns">
+        <button class="btn sm" id="ipBtn" data-i18n="myip"></button>
+      </div>
+      <label class="auto" data-i18n-title="auto.title"><span class="switch"><input type="checkbox" id="auto" /><span></span></span><span data-i18n="auto.label"></span></label>
+    </div>
+    <div class="ip" id="ipOut" hidden></div>
+  </section>
+
+  <section class="job" id="job" hidden>
+    <div class="job-line"><span id="jobText"></span><button class="btn sm danger" id="stop" data-i18n="tb.stop"></button></div>
+    <div class="progress"><i id="jobBar"></i></div>
+  </section>
+
+  <section class="list-head">
+    <div class="tabs" id="tabs">
+      <button data-f="alive" data-i18n="tab.alive"></button>
+      <button data-f="eliteSsl" data-i18n="tab.eliteSsl" data-i18n-title="cat.eliteSsl.hint"></button>
+      <button data-f="elite" data-i18n="tab.elite" data-i18n-title="cat.elite.hint"></button>
+      <button data-f="ssl" data-i18n="tab.ssl" data-i18n-title="cat.ssl.hint"></button>
+      <button data-f="fav" data-i18n-title="tab.fav">★</button>
+    </div>
+    <select class="input" id="country"></select>
+  </section>
+  <div class="list" id="list"></div>
+
+  <footer class="foot">
+    <button class="btn primary" id="dl"></button>
+    <button class="btn" id="recheck" data-i18n-title="pop.recheck"></button>
+    <button class="btn" id="manager" data-i18n-title="pop.managerTitle"></button>
+  </footer>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+# Eklenti paketleme anahtarı — ASLA paylaşmayın
+extension-key.pem
+*.pem
+# Paketlenmiş eklenti
+*.crx
+*.zip
+node_modules/
+
+# Üretilen paketler
+dist/

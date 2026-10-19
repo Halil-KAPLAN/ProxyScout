@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ProxyScout</title>
+  <link rel="icon" href="icons/brand32.png" />
+  <link rel="preload" href="fonts/TwemojiCountryFlags.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="common.css" />
+  <link rel="stylesheet" href="manager.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <img src="icons/brand48.png" alt="" />
+      <div><b>ProxyScout</b><small data-i18n="brand.sub"></small></div>
+    </div>
+
+    <div class="conn" id="conn">
+      <span class="dot"></span>
+      <div class="conn-text">
+        <b id="connTitle"></b>
+        <small id="connSub"></small>
+      </div>
+      <label class="main-toggle" id="toggleWrap" data-i18n-title="toggle.title">
+        <span id="toggleLabel"></span>
+        <span class="switch big"><input type="checkbox" id="mainToggle" /><span></span></span>
+      </label>
+    </div>
+
+    <div class="top-right">
+      <label class="auto" data-i18n-title="auto.title">
+        <span class="switch"><input type="checkbox" id="autoSwitch" /><span></span></span>
+        <span data-i18n="auto.label"></span>
+      </label>
+      <button class="btn" id="btnMyIp" data-i18n-title="myip.title"></button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="side">
+      <nav id="cats" class="cats"></nav>
+      <div class="side-sep"></div>
+      <nav class="cats">
+        <a href="#" data-view="sources" class="cat"></a>
+        <a href="#" data-view="settings" class="cat"></a>
+      </nav>
+      <div class="side-foot">
+        <div id="sideInfo"></div>
+        <label class="lang-pick">
+          <span data-i18n="side.lang"></span>
+          <select class="input" id="langQuick"></select>
+        </label>
+      </div>
+    </aside>
+
+    <main>
+      <!-- Proxy listesi -->
+      <section class="view" id="view-list">
+        <div class="toolbar">
+          <button class="btn primary" id="btnDownload"></button>
+          <div class="menu-wrap">
+            <button class="btn" id="btnTest" data-menu="menuTest"></button>
+            <div class="menu" id="menuTest">
+              <button data-test="selected" data-i18n="menu.test.selected"></button>
+              <button data-test="visible" data-i18n="menu.test.visible"></button>
+              <hr />
+              <button data-test="new" data-i18n="menu.test.new"></button>
+              <button data-test="alive" data-i18n="menu.test.alive"></button>
+              <button data-test="dead" data-i18n="menu.test.dead"></button>
+              <button data-test="all" data-i18n="menu.test.all"></button>
+            </div>
+          </div>
+          <button class="btn danger" id="btnStop" hidden></button>
+          <span class="tb-sep"></span>
+          <button class="btn" id="btnImport"></button>
+          <div class="menu-wrap">
+            <button class="btn" id="btnCopy" data-menu="menuCopy"></button>
+            <div class="menu" id="menuCopy">
+              <button data-copy="selected" data-i18n="menu.copy.selected"></button>
+              <button data-copy="visible" data-i18n="menu.copy.visible"></button>
+              <button data-copy="visible-scheme" data-i18n="menu.copy.visibleScheme"></button>
+            </div>
+          </div>
+          <div class="menu-wrap">
+            <button class="btn" id="btnDelete" data-menu="menuDelete"></button>
+            <div class="menu" id="menuDelete">
+              <button data-del="selected" data-i18n="menu.del.selected"></button>
+              <button data-del="permanent" data-i18n="menu.del.permanent"></button>
+              <button data-del="dead" data-i18n="menu.del.dead"></button>
+              <hr />
+              <button data-del="all" class="danger" data-i18n="menu.del.all"></button>
+            </div>
+          </div>
+          <div class="tb-fill"></div>
+          <input class="input search" id="search" type="search" data-i18n-ph="search.ph" />
+          <select class="input" id="fType">
+            <option value="" data-i18n="filter.allTypes"></option>
+            <option value="http">HTTP</option>
+            <option value="socks4">SOCKS4</option>
+            <option value="socks5">SOCKS5</option>
+          </select>
+          <select class="input" id="fCountry"></select>
+        </div>
+
+        <div class="table" id="table">
+          <div class="thead" id="thead"></div>
+          <div class="tbody" id="tbody">
+            <div class="spacer" id="spacer"></div>
+            <div class="rows" id="rows"></div>
+          </div>
+          <div class="empty" id="empty" hidden></div>
+        </div>
+      </section>
+
+      <!-- Kaynaklar -->
+      <section class="view" id="view-sources" hidden>
+        <div class="page-head">
+          <div>
+            <h2 data-i18n="src.title"></h2>
+            <p class="muted" data-i18n-html="src.desc"></p>
+          </div>
+          <div class="head-actions">
+            <button class="btn" id="srcReset" data-i18n="src.reset"></button>
+            <button class="btn primary" id="srcDownload"></button>
+          </div>
+        </div>
+        <form class="src-add" id="srcAdd">
+          <input class="input" name="name" data-i18n-ph="src.namePh" required />
+          <input class="input grow" name="url" type="url" data-i18n-ph="src.urlPh" required />
+          <select class="input" name="type">
+            <option value="http">HTTP</option>
+            <option value="socks4">SOCKS4</option>
+            <option value="socks5">SOCKS5</option>
+            <option value="auto" data-i18n="src.typeAuto"></option>
+          </select>
+          <button class="btn" type="submit"></button>
+        </form>
+        <div class="src-table" id="srcTable"></div>
+      </section>
+
+      <!-- Ayarlar -->
+      <section class="view" id="view-settings" hidden>
+        <div class="page-head">
+          <div>
+            <h2 data-i18n="set.title"></h2>
+            <p class="muted" data-i18n="set.desc"></p>
+          </div>
+        </div>
+        <form class="settings" id="settingsForm">
+          <fieldset>
+            <legend data-i18n="set.general"></legend>
+            <label><span data-i18n="set.lang"></span>
+              <select class="input" name="lang" id="langSelect"></select>
+            </label>
+          </fieldset>
+          <fieldset>
+            <legend data-i18n="set.test"></legend>
+            <label><span data-i18n="set.concurrency"></span> <input class="input" type="number" name="concurrency" min="5" max="250" /></label>
+            <label><span data-i18n="set.timeout"></span> <input class="input" type="number" name="timeout" min="1000" max="60000" step="500" /></label>
+            <label><span data-i18n="set.sslTimeout"></span> <input class="input" type="number" name="sslTimeout" min="1000" max="60000" step="500" /></label>
+            <label><span data-i18n="set.permanentFails"></span> <input class="input" type="number" name="permanentFails" min="1" max="50" /></label>
+            <label class="wide"><span data-i18n="set.judge"></span> <input class="input" type="url" name="judgeUrl" /><small data-i18n="set.judgeHint"></small></label>
+            <label class="check"><span class="switch"><input type="checkbox" name="sslTest" /><span></span></span> <span data-i18n="set.sslTest"></span></label>
+            <label class="check"><span class="switch"><input type="checkbox" name="geo" /><span></span></span> <span data-i18n="set.geo"></span></label>
+          </fieldset>
+          <fieldset>
+            <legend data-i18n="set.download"></legend>
+            <label class="check"><span class="switch"><input type="checkbox" name="autoTestAfterDownload" /><span></span></span> <span data-i18n="set.autoTest"></span></label>
+            <label><span data-i18n="set.maxPerSource"></span> <input class="input" type="number" name="maxPerSource" min="0" /></label>
+          </fieldset>
+          <fieldset>
+            <legend data-i18n="set.connection"></legend>
+            <label><span data-i18n="set.watch"></span> <input class="input" type="number" name="watchMinutes" min="1" max="60" /></label>
+            <label><span data-i18n="set.recheck"></span> <input class="input" type="number" name="recheckMinutes" min="0" max="1440" /></label>
+            <label class="wide"><span data-i18n-html="set.bypass"></span>
+              <textarea class="input mono" name="bypass" rows="5"></textarea>
+            </label>
+          </fieldset>
+          <fieldset class="sync-box">
+            <legend data-i18n="set.sync"></legend>
+            <p class="wide muted" data-i18n="set.syncDesc"></p>
+            <label class="check"><span class="switch"><input type="checkbox" name="syncChrome" /><span></span></span> <span data-i18n="set.syncChrome"></span></label>
+            <div class="wide sync-status" id="syncChromeStatus"></div>
+            <div class="wide sync-sep"></div>
+            <div class="wide"><b data-i18n="set.drive"></b></div>
+            <div class="wide drive-row">
+              <button type="button" class="btn google-btn" id="driveConnect"></button>
+              <div class="drive-account" id="driveAccount" hidden></div>
+              <button type="button" class="btn sm danger" id="driveDisconnect" data-i18n="sync.disconnect"></button>
+            </div>
+            <div class="wide sync-status" id="syncDriveStatus"></div>
+            <div class="wide sync-actions"><button type="button" class="btn" id="syncNow"></button></div>
+            <details class="wide adv" id="driveAdvanced">
+              <summary data-i18n="set.advanced"></summary>
+              <label><span data-i18n="set.driveClientId"></span>
+                <input class="input mono" name="driveClientId" placeholder="1234567890-abc.apps.googleusercontent.com" />
+                <small data-i18n="set.driveHelp"></small>
+              </label>
+              <div class="redirect"><span data-i18n="set.redirect"></span> <code class="mono" id="redirectUri"></code> <button type="button" class="btn sm" id="copyRedirect" data-i18n="set.copy"></button></div>
+            </details>
+          </fieldset>
+          <div class="form-actions"><button class="btn primary" type="submit" data-i18n="set.save"></button></div>
+          <p class="credits muted" data-i18n-html="set.credits"></p>
+        </form>
+      </section>
+
+      <footer class="status">
+        <div class="job" id="job">
+          <div class="job-text" id="jobText"></div>
+          <div class="progress"><i id="jobBar"></i></div>
+        </div>
+        <div class="counts" id="counts"></div>
+        <button class="btn ghost sm" id="btnLog"></button>
+      </footer>
+      <div class="log" id="log" hidden></div>
+    </main>
+  </div>
+
+  <dialog id="importDlg" class="dlg">
+    <form method="dialog" id="importForm">
+      <h3 data-i18n="imp.title"></h3>
+      <p class="muted" data-i18n-html="imp.desc"></p>
+      <textarea class="input mono" name="text" rows="10" placeholder="1.2.3.4:8080&#10;socks5://5.6.7.8:1080"></textarea>
+      <div class="dlg-row">
+        <label><span data-i18n="imp.type"></span>
+          <select class="input" name="type">
+            <option value="http">HTTP</option><option value="socks4">SOCKS4</option><option value="socks5">SOCKS5</option>
+          </select>
+        </label>
+        <label class="check"><span class="switch"><input type="checkbox" name="test" checked /><span></span></span> <span data-i18n="imp.test"></span></label>
+      </div>
+      <div class="dlg-actions">
+        <button class="btn" value="cancel" formnovalidate data-i18n="imp.cancel"></button>
+        <button class="btn primary" value="ok" data-i18n="imp.ok"></button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="manager.js"></script>
+</body>
+</html>

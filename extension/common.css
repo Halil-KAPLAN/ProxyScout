@@ -1,0 +1,138 @@
+/* Windows bayrak emojilerini çizemez; yalnızca bayrak karakterleri için Twemoji fontu (CC-BY 4.0). */
+@font-face {
+  font-family: 'Twemoji Country Flags';
+  src: url('fonts/TwemojiCountryFlags.woff2') format('woff2');
+  unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0062-E007F;
+  font-display: block;
+}
+
+:root {
+  --bg: #0d1117;
+  --bg-2: #121821;
+  --panel: #161d28;
+  --panel-2: #1c2533;
+  --line: #263142;
+  --line-2: #324057;
+  --text: #e6edf3;
+  --muted: #8b98a9;
+  --faint: #5b6779;
+  --accent: #10b981;
+  --accent-2: #2563eb;
+  --accent-soft: rgba(16, 185, 129, 0.14);
+  --blue-soft: rgba(37, 99, 235, 0.16);
+  --ok: #22c55e;
+  --ok-soft: rgba(34, 197, 94, 0.14);
+  --warn: #f59e0b;
+  --warn-soft: rgba(245, 158, 11, 0.14);
+  --err: #ef4444;
+  --err-soft: rgba(239, 68, 68, 0.13);
+  --info: #60a5fa;
+  --row-hover: rgba(148, 163, 184, 0.06);
+  --row-sel: rgba(37, 99, 235, 0.2);
+  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  --radius: 10px;
+  --mono: 'Twemoji Country Flags', 'Cascadia Mono', 'JetBrains Mono', Consolas, ui-monospace, monospace;
+  --sans: 'Twemoji Country Flags', 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f4f6f9;
+    --bg-2: #eef1f5;
+    --panel: #ffffff;
+    --panel-2: #f6f8fb;
+    --line: #e2e7ee;
+    --line-2: #cfd7e2;
+    --text: #111827;
+    --muted: #5d6b7e;
+    --faint: #94a0b0;
+    --accent-soft: rgba(16, 185, 129, 0.12);
+    --blue-soft: rgba(37, 99, 235, 0.1);
+    --row-hover: rgba(15, 23, 42, 0.035);
+    --row-sel: rgba(37, 99, 235, 0.12);
+    --shadow: 0 10px 30px rgba(15, 23, 42, 0.14);
+    color-scheme: light;
+  }
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; }
+body { background: var(--bg); color: var(--text); font: 13px/1.45 var(--sans); }
+button, input, select, textarea { font: inherit; color: inherit; }
+.mono { font-family: var(--mono); font-size: 12.5px; }
+.muted { color: var(--muted); }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px;
+  border: 1px solid var(--line-2); border-radius: 8px; background: var(--panel-2); cursor: pointer;
+  white-space: nowrap; transition: background .12s, border-color .12s, opacity .12s;
+}
+.btn:hover { border-color: var(--faint); background: var(--panel); }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border-color: transparent; color: #fff; font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { color: var(--err); }
+.btn.danger.solid { background: var(--err); color: #fff; border-color: transparent; }
+.btn.ghost { background: transparent; border-color: transparent; }
+.btn.ghost:hover { background: var(--panel-2); }
+.btn.sm { height: 26px; padding: 0 9px; font-size: 12px; border-radius: 6px; }
+.btn svg { width: 15px; height: 15px; flex: none; }
+
+.input, select.input, textarea.input {
+  height: 32px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--bg-2); outline: none;
+}
+textarea.input { height: auto; padding: 8px 10px; resize: vertical; }
+.input:focus { border-color: var(--accent-2); box-shadow: 0 0 0 3px var(--blue-soft); }
+
+/* Aç/kapa anahtarı */
+.switch { position: relative; display: inline-block; width: 42px; height: 24px; flex: none; cursor: pointer; }
+.switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.switch span { position: absolute; inset: 0; border-radius: 99px; background: var(--line-2); transition: background .18s; }
+.switch span::after { content: ''; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .18s; }
+.switch input:checked + span { background: var(--ok); }
+.switch input:checked + span::after { transform: translateX(18px); }
+.switch input:focus-visible + span { box-shadow: 0 0 0 3px var(--blue-soft); }
+.switch.big { width: 56px; height: 30px; }
+.switch.big span::after { width: 24px; height: 24px; }
+.switch.big input:checked + span::after { transform: translateX(26px); }
+
+.chip { display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px; border-radius: 99px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.chip.alive { color: var(--ok); background: var(--ok-soft); }
+.chip.dead { color: var(--err); background: var(--err-soft); }
+.chip.new { color: var(--muted); background: var(--panel-2); }
+.chip.checking { color: var(--info); background: var(--blue-soft); }
+.chip.checking::before { animation: pulse 1s infinite; }
+.chip.plain::before { display: none; }
+@keyframes pulse { 50% { opacity: .2; } }
+
+.tag { display: inline-block; padding: 1px 6px; border-radius: 5px; font-size: 11px; font-weight: 600; letter-spacing: .02em; background: var(--panel-2); border: 1px solid var(--line); color: var(--muted); }
+.tag.socks5 { color: #c084fc; }
+.tag.socks4 { color: #f0abfc; }
+.tag.http { color: var(--info); }
+.cc { display: inline-block; min-width: 26px; text-align: center; padding: 0 4px; border-radius: 4px; font: 600 10.5px/16px var(--mono); background: var(--panel-2); border: 1px solid var(--line); margin-right: 6px; }
+
+.lat { font-family: var(--mono); font-size: 12px; }
+.lat.fast { color: var(--ok); }
+.lat.mid { color: var(--warn); }
+.lat.slow { color: var(--err); }
+
+.progress { height: 4px; border-radius: 99px; background: var(--line); overflow: hidden; }
+.progress > i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--accent), var(--accent-2)); transition: width .3s; }
+
+#toasts { position: fixed; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; z-index: 100; }
+.toast { padding: 10px 14px; border-radius: 9px; background: var(--panel); border: 1px solid var(--line-2); box-shadow: var(--shadow); max-width: 360px; transition: opacity .3s, transform .3s; }
+.toast.ok { border-left: 3px solid var(--ok); }
+.toast.err { border-left: 3px solid var(--err); }
+.toast.out { opacity: 0; transform: translateY(6px); }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 99px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* Bağlanıyor göstergesi */
+.spin { display: inline-block; width: 12px; height: 12px; flex: none; border-radius: 50%; border: 2px solid currentColor; border-right-color: transparent; animation: spin .7s linear infinite; vertical-align: -2px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.flag { font-family: 'Twemoji Country Flags', sans-serif; font-size: 15px; line-height: 1; vertical-align: -2px; margin-right: 6px; }
