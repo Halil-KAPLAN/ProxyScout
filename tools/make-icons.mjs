@@ -69,8 +69,13 @@ function shade(x, y, [c1, c2]) {
 }
 const mix = (a, b, t) => a.map((v, i) => Math.round(v + (b[i] - v) * t));
 
-for (const [name, colors] of Object.entries(VARIANTS)) {
-  for (const size of [16, 32, 48, 128]) {
+// Mağaza logosu (Edge: 300×300) yalnızca marka renginde, store/ klasörüne.
+const STORE = new URL('../store/', import.meta.url);
+mkdirSync(STORE, { recursive: true });
+const jobs = Object.entries(VARIANTS).flatMap(([name, colors]) => [16, 32, 48, 128].map((size) => [name, colors, size, OUT]));
+jobs.push(['logo-300', VARIANTS.brand, 300, STORE]);
+for (const [name, colors, size, dir] of jobs) {
+  {
     const buf = Buffer.alloc(size * size * 4);
     const ss = 4;
     for (let y = 0; y < size; y++)
@@ -87,7 +92,7 @@ for (const [name, colors] of Object.entries(VARIANTS)) {
           buf[i + 3] = Math.round((acc[3] / (ss * ss)) * 255);
         }
       }
-    writeFileSync(new URL(`${name}${size}.png`, OUT), png(size, buf));
+    writeFileSync(new URL(dir === STORE ? `${name}.png` : `${name}${size}.png`, dir), png(size, buf));
   }
 }
 console.log('ikonlar üretildi:', Object.keys(VARIANTS).join(', '));

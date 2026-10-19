@@ -151,7 +151,11 @@ Sürüm artırılmadan yapılan gönderimlerde yalnızca testler çalışır; ma
 
 ### Bir kerelik mağaza kurulumu
 
-Her iki mağazada da **ilk sürüm panelden elle yüklenir** (`npm run build` ile üretilen zip);
+Mağaza formlarına girilecek açıklamalar, izin gerekçeleri ve görseller (TR/EN):
+[`store/LISTING.md`](store/LISTING.md) ve [`store/`](store) klasörü.
+
+Her iki mağazada da **ilk sürüm panelden elle yüklenir** (`npm run build` ile üretilen ya da
+[Releases](https://github.com/Halil-KAPLAN/ProxyScout/releases/latest) sayfasındaki zip);
 sonraki sürümleri iş akışı otomatik gönderir. Gerekli gizli anahtarlar GitHub'da
 **Settings → Secrets and variables → Actions** altına eklenir. Anahtarlar yoksa o mağaza atlanır.
 
