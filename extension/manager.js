@@ -6,8 +6,10 @@ import {
 import { icon } from './lib/icons.js';
 import { formatProxy } from './lib/parse.js';
 import { sourceTypes, enabledTypes, sourceHome } from './lib/sources.js';
+import { IS_FIREFOX, credsSyncAllowed, requestCredsSync } from './lib/platform.js';
 
 const langSetting = await initLang();
+if (IS_FIREFOX) document.querySelector('[data-i18n="set.syncChrome"]')?.setAttribute('data-i18n', 'set.syncFirefox');
 applyI18n();
 
 const $ = (s) => document.querySelector(s);
@@ -667,6 +669,23 @@ function renderSync() {
   if (!d.configured) $('#driveAdvanced').open = true;
   $('#redirectUri').textContent = sy.redirectUri;
   $('#syncNow').disabled = !(sy.chrome.enabled || sy.drive.connected);
+  renderCredsNote();
+}
+
+// Firefox: "kimlik doğrulama bilgisi" veri izni verilmediyse özel proxy şifreleri senkrona yazılmaz; kullanıcıya söyle.
+const hasCredProxies = () => [...store.proxies.values()].some((p) => p.user);
+async function renderCredsNote() {
+  const el = $('#syncCredsNote');
+  const sy = store.sync;
+  const show = IS_FIREFOX && (sy.chrome.enabled || sy.drive.connected) && hasCredProxies() && !(await credsSyncAllowed());
+  el.hidden = !show;
+  el.textContent = show ? t('sync.noCreds') : '';
+}
+
+// Senkron düğmelerine basılınca, şifreli proxy varsa Firefox'un veri iznini iste (kullanıcı etkileşimi içinde, ilk iş olarak).
+function askCredsIfNeeded() {
+  if (!IS_FIREFOX || !hasCredProxies()) return Promise.resolve();
+  return requestCredsSync().then(renderCredsNote);
 }
 
 $('#copyRedirect').addEventListener('click', async () => {
@@ -674,11 +693,13 @@ $('#copyRedirect').addEventListener('click', async () => {
   toast(t('toast.copiedText'), 'ok');
 });
 $('#driveConnect').addEventListener('click', async () => {
+  const creds = askCredsIfNeeded();
   const id = $('#settingsForm').elements.driveClientId.value.trim();
   if (!id && !store.sync?.drive?.builtin) return toast(t('e.driveNoClient'), 'err');
   const b = $('#driveConnect');
   b.disabled = true;
   try {
+    await creds;
     if (id !== (store.settings.driveClientId || '')) await send('saveSettings', { settings: { driveClientId: id } });
     const r = await run('driveConnect');
     toast(t('sync.as', { email: r.drive.email || 'Google' }), 'ok');
@@ -689,9 +710,11 @@ $('#driveConnect').addEventListener('click', async () => {
 });
 $('#driveDisconnect').addEventListener('click', () => run('driveDisconnect'));
 $('#syncNow').addEventListener('click', async () => {
+  const creds = askCredsIfNeeded();
   const b = $('#syncNow');
   b.disabled = true;
   try {
+    await creds;
     const r = await run('syncNow');
     const err = r.chrome.error || r.drive.error;
     toast(err ? t(err) : t('toast.syncDone'), err ? 'err' : 'ok');

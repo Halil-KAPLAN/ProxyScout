@@ -38,6 +38,65 @@ export function directMarker(token) {
   return `__pxd${token}=1`;
 }
 
+// PAC ortamındaki shExpMatch: * herhangi bir dizi, ? tek karakter, tam eşleşme.
+export function shExpMatch(str, exp) {
+  const re = exp.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
+  return new RegExp('^' + re + '$', 'i').test(str);
+}
+
+// buildPac'teki FindProxyForURL ile aynı karar, düz JS olarak (Firefox'un proxy.onRequest'i için).
+// Dönüş değeri PAC yönergesidir: "DIRECT", "PROXY h:p", "SOCKS h:p" ya da "SOCKS5 h:p".
+// İkisinin aynı kararı verdiği tests/logic.test.mjs'de denetlenir.
+const CHECK_RE = /^(PROXY|SOCKS|SOCKS5)~([A-Za-z0-9.-]+)~(\d{1,5})/;
+const HOST_RE = /^pxs[0-9a-f]+-(h|4|5)-(\d+)-(\d+)-(\d+)-(\d+)-(\d{1,5})-[a-z0-9]+\.cloudflareaccess\.com$/;
+const ipToNum = (ip) => ip.split('.').reduce((n, x) => n * 256 + +x, 0);
+
+function bypassed(host, bypass) {
+  for (const b of bypass) {
+    if (b === '<local>') {
+      if (host.indexOf('.') === -1) return true;
+      continue;
+    }
+    const c = b.indexOf('/');
+    if (c !== -1) {
+      if (!/^\d+\.\d+\.\d+\.\d+$/.test(host)) continue;
+      const bits = +b.substring(c + 1);
+      const mask = bits === 0 ? 0 : (0xffffffff << (32 - bits)) >>> 0;
+      if (((ipToNum(host) & mask) >>> 0) === ((ipToNum(b.substring(0, c)) & mask) >>> 0)) return true;
+      continue;
+    }
+    if (shExpMatch(host, b)) return true;
+  }
+  return false;
+}
+
+export function findProxy({ token, active = null, bypass = [], hostMap = {} }, url, host) {
+  const i = url.indexOf('__pxc' + token + '=');
+  if (i !== -1) {
+    const m = CHECK_RE.exec(url.substring(i + token.length + 6));
+    return m ? m[1] + ' ' + m[2] + ':' + m[3] : 'PROXY 0.0.0.0:9';
+  }
+  if (host.indexOf('pxs' + token.substring(0, 10) + '-') === 0) {
+    const h = HOST_RE.exec(host);
+    return h ? (h[1] === 'h' ? 'PROXY ' : h[1] === '4' ? 'SOCKS ' : 'SOCKS5 ') + h[2] + '.' + h[3] + '.' + h[4] + '.' + h[5] + ':' + h[6] : 'PROXY 0.0.0.0:9';
+  }
+  if (url.indexOf('__pxd' + token) !== -1) return 'DIRECT';
+  if (Object.prototype.hasOwnProperty.call(hostMap, host)) return hostMap[host];
+  if (!active || active === 'DIRECT' || bypassed(host, bypass)) return 'DIRECT';
+  return active;
+}
+
+// PAC yönergesini Firefox proxy.onRequest'in beklediği ProxyInfo nesnesine çevirir.
+// SOCKS5'te alan adı da proxy üzerinden çözülür (gerçek DNS sızmasın diye).
+export function toProxyInfo(directive) {
+  const m = /^(PROXY|SOCKS5|SOCKS)\s+([^\s:]+):(\d+)$/.exec(directive || '');
+  if (!m) return { type: 'direct' };
+  const [, kind, host, port] = m;
+  if (kind === 'SOCKS5') return { type: 'socks', host, port: +port, proxyDNS: true };
+  if (kind === 'SOCKS') return { type: 'socks4', host, port: +port };
+  return { type: 'http', host, port: +port };
+}
+
 export function buildPac({ token, active = null, bypass = [], hostMap = {} }) {
   return `var T=${JSON.stringify(token)};
 var ACTIVE=${JSON.stringify(active || 'DIRECT')};

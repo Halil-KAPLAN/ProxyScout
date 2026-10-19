@@ -1,8 +1,9 @@
 // ProxyScout arka plan servisi: liste indirme, proxy testi, proxy'ye bağlanma, otomatik geçiş.
 // Kayıtlar ve hatalar dil anahtarı olarak tutulur; arayüz bunları seçili dilde gösterir (lib/messages.js).
+import { IS_FIREFOX, credsSyncAllowed } from './lib/platform.js';
 import { DEFAULT_SOURCES, enabledTypes } from './lib/sources.js';
 import { parseProxyList, parseManualList, proxyId } from './lib/parse.js';
-import { buildPac, directiveFor, checkMarker, directMarker, httpsCheckHost } from './lib/pac.js';
+import { buildPac, findProxy, toProxyInfo, directiveFor, checkMarker, directMarker, httpsCheckHost } from './lib/pac.js';
 import { t, has, setLang, resolveLang } from './lib/i18n.js';
 import { loadGeo } from './lib/geoip.js';
 import { buildSnapshot, mergeSnapshot, packForChromeSync, unpackFromChromeSync, SYNC_PREFIX } from './lib/sync.js';
@@ -270,9 +271,43 @@ const saveActive = () => chrome.storage.local.set({ active: S.active });
 let hostMap = {};
 let warnedOtherExt = false;
 
+// Firefox: PAC yerine her isteğe proxy.onRequest ile karar verilir; bu, PAC'e verilecek yapılandırmanın aynısıdır.
+// null = eklenti proxy'ye karışmıyor (her şey doğrudan).
+let ffProxy = null;
+
+if (IS_FIREFOX) {
+  // Kalıcı arka plan sayfasında üst düzeyde kaydedilir; tarayıcı açılırken gelen istekler init bitene kadar bekletilir,
+  // böylece bağlı proxy varken açılıştaki istekler doğrudan çıkıp gerçek IP'yi sızdırmaz.
+  chrome.proxy.onRequest.addListener(
+    async (d) => {
+      if (!/^(https?|wss?|ftp):/i.test(d.url)) return { type: 'direct' };
+      await ready;
+      if (!ffProxy) return { type: 'direct' };
+      let host = '';
+      try {
+        host = new URL(d.url).hostname.replace(/^\[|\]$/g, '');
+      } catch {}
+      const info = toProxyInfo(findProxy(ffProxy, d.url, host));
+      // Chrome'un aksine Firefox, SOCKS5 proxy'ler için kullanıcı adı/şifreyi destekler.
+      const cred = info.type === 'socks' && ffProxy.socksAuth[info.host + ':' + info.port];
+      if (cred) Object.assign(info, { username: cred.user, password: cred.pass });
+      return info;
+    },
+    { urls: ['<all_urls>'] },
+  );
+}
+
 async function applyProxy(newHostMap) {
   if (newHostMap) hostMap = newHostMap;
   const act = S.active.enabled && S.proxies.get(S.active.id);
+  if (IS_FIREFOX) {
+    S.control = 'controllable_by_this_extension';
+    const socksAuth = {};
+    for (const p of S.proxies.values()) if (p.user && p.type === 'socks5') socksAuth[p.host + ':' + p.port] = { user: p.user, pass: p.pass || '' };
+    ffProxy = act || S.job ? { token: S.token, active: act ? directiveFor(act) : null, bypass: S.settings.bypass, hostMap, socksAuth } : null;
+    updateBadge();
+    return;
+  }
   try {
     const cur = await chrome.proxy.settings.get({});
     S.control = cur.levelOfControl;
@@ -303,6 +338,8 @@ function iconState() {
 }
 
 const BADGE_COLOR = { on: '#16a34a', bad: '#dc2626', wait: '#f59e0b', off: '#6b7280' };
+// MV3'te chrome.action, Firefox'un MV2 paketinde browserAction.
+const toolbarButton = IS_FIREFOX ? chrome.browserAction : chrome.action;
 
 function updateBadge() {
   const act = S.active.enabled && S.proxies.get(S.active.id);
@@ -319,33 +356,32 @@ function updateBadge() {
   } else if (act) {
     text = act.country || 'ON';
   }
-  chrome.action.setBadgeText({ text });
-  chrome.action.setBadgeBackgroundColor({ color });
-  chrome.action.setTitle({
+  toolbarButton.setBadgeText({ text });
+  toolbarButton.setBadgeBackgroundColor({ color });
+  toolbarButton.setTitle({
     title: state === 'wait' ? t('title.wait') : state === 'bad' ? t('title.bad', { addr: fmt(act) }) : act ? t('title.on', { addr: fmt(act) }) : t('title.off'),
   });
   if (state !== lastIcon) {
     lastIcon = state;
-    chrome.action.setIcon({ path: { 16: `icons/${state}16.png`, 32: `icons/${state}32.png`, 48: `icons/${state}48.png` } });
+    toolbarButton.setIcon({ path: { 16: `icons/${state}16.png`, 32: `icons/${state}32.png`, 48: `icons/${state}48.png` } });
   }
 }
 
 // Kullanıcı adı/şifreli (özel) proxy'ler için kimlik bilgisi sağla.
 const authTries = new Map();
-chrome.webRequest.onAuthRequired.addListener(
-  (details, callback) => {
-    if (!details.isProxy) return callback({});
-    const n = (authTries.get(details.requestId) || 0) + 1;
-    authTries.set(details.requestId, n);
-    if (authTries.size > 500) authTries.clear();
-    const { host, port } = details.challenger || {};
-    const p = [...S.proxies.values()].find((x) => x.user && x.host === host && x.port === port);
-    if (!p || n > 1) return callback({ cancel: true });
-    callback({ authCredentials: { username: p.user, password: p.pass } });
-  },
-  { urls: ['<all_urls>'] },
-  ['asyncBlocking'],
-);
+function proxyAuth(details) {
+  if (!details.isProxy) return {};
+  const n = (authTries.get(details.requestId) || 0) + 1;
+  authTries.set(details.requestId, n);
+  if (authTries.size > 500) authTries.clear();
+  const { host, port } = details.challenger || {};
+  const p = [...S.proxies.values()].find((x) => x.user && x.host === host && x.port === port);
+  if (!p || n > 1) return { cancel: true };
+  return { authCredentials: { username: p.user, password: p.pass } };
+}
+// Chrome: webRequestAuthProvider + asyncBlocking; Firefox: webRequestBlocking + blocking (değer döndürülür).
+if (IS_FIREFOX) chrome.webRequest.onAuthRequired.addListener(proxyAuth, { urls: ['<all_urls>'] }, ['blocking']);
+else chrome.webRequest.onAuthRequired.addListener((d, callback) => callback(proxyAuth(d)), { urls: ['<all_urls>'] }, ['asyncBlocking']);
 
 // ---------------------------------------------------------------- işler
 
@@ -766,7 +802,7 @@ async function watchActive() {
 }
 
 let errDebounce = null;
-chrome.proxy.onProxyError.addListener(() => {
+chrome.proxy[IS_FIREFOX ? 'onError' : 'onProxyError'].addListener(() => {
   if (S.job || S.connecting || !S.active.enabled || errDebounce) return;
   errDebounce = setTimeout(() => {
     errDebounce = null;
@@ -829,8 +865,11 @@ function scheduleSyncPush() {
   chrome.alarms.create('syncPush', { when: Math.max(Date.now() + PUSH_DELAY, last + PUSH_MIN_GAP) });
 }
 
-const localSyncState = () => ({
-  proxies: [...S.proxies.values()],
+// withCreds = false: kendi eklenen proxy'lerin kullanıcı adı/şifresi senkrona yazılmaz
+// (Firefox'ta kullanıcı "kimlik doğrulama bilgisi" veri iznini vermediyse).
+const withoutCreds = ({ user, pass, ...p }) => p;
+const localSyncState = (withCreds = true) => ({
+  proxies: withCreds ? [...S.proxies.values()] : [...S.proxies.values()].map(withoutCreds),
   settings: S.settings,
   settingsTs: S.settingsTs,
   sources: S.sources,
@@ -868,7 +907,9 @@ async function applyRemote(snap, from) {
   return r;
 }
 
-// --- Chrome senkronu
+// --- Chrome senkronu (Firefox'ta Firefox Sync; aynı chrome.storage.sync API'si)
+
+const BROWSER_SYNC = IS_FIREFOX ? 'Firefox' : 'Chrome';
 
 async function chromePull() {
   const all = await chrome.storage.sync.get(null);
@@ -877,19 +918,19 @@ async function chromePull() {
   if (!meta || meta.device === S.deviceId || meta.ts <= (S.sync.chrome.seenTs || 0)) return false;
   const snap = await unpackFromChromeSync(all);
   if (!snap) return false;
-  await applyRemote(snap, 'Chrome');
+  await applyRemote(snap, BROWSER_SYNC);
   Object.assign(S.sync.chrome, { seenTs: meta.ts, lastPull: Date.now() });
   return true;
 }
 
 async function chromePush() {
   await chromePull();
-  const { items, count, bytes, ts } = await packForChromeSync(localSyncState());
+  const { items, count, bytes, ts } = await packForChromeSync(localSyncState(await credsSyncAllowed()));
   const stale = Object.keys(await chrome.storage.sync.get(null)).filter((k) => k.startsWith(SYNC_PREFIX) && !(k in items));
   await chrome.storage.sync.set(items); // tek yazma işlemi
   if (stale.length) await chrome.storage.sync.remove(stale);
   Object.assign(S.sync.chrome, { lastPush: Date.now(), seenTs: ts, count, bytes, error: null });
-  log('ok', 'log.syncPushed', { target: 'Chrome', n: count });
+  log('ok', 'log.syncPushed', { target: BROWSER_SYNC, n: count });
 }
 
 chrome.storage.onChanged.addListener(async (changes, area) => {
@@ -949,7 +990,7 @@ async function drivePull() {
 
 async function drivePush() {
   await drivePull();
-  const snap = buildSnapshot(localSyncState(), DRIVE_MAX_PROXIES);
+  const snap = buildSnapshot(localSyncState(await credsSyncAllowed()), DRIVE_MAX_PROXIES);
   S.sync.drive.fileId = await drive.write(snap, S.sync.drive.fileId);
   Object.assign(S.sync.drive, { lastPush: Date.now(), seenTs: snap.ts, count: snap.proxies.length, error: null });
   log('ok', 'log.syncPushed', { target: 'Google Drive', n: snap.proxies.length });

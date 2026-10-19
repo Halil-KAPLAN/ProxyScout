@@ -26,6 +26,7 @@ all browser traffic goes through it; one switch turns it off again.
 | --- | --- |
 | Chrome, Brave, Opera, Vivaldi | **Chrome Web Store** — _awaiting review_ <!-- CWS_LINK --> |
 | Microsoft Edge | **Edge Add-ons** — _awaiting review_ <!-- EDGE_LINK --> |
+| Firefox (desktop, 140+) | **Firefox Add-ons** — _coming soon_ <!-- AMO_LINK --> |
 
 ### From GitHub (developer mode)
 
@@ -37,6 +38,10 @@ all browser traffic goes through it; one switch turns it off again.
 5. Pin ProxyScout from the puzzle icon in the toolbar.
 
 The manager page opens automatically after the first install.
+
+**Firefox (temporary, for testing):** run `npm run build`, open `about:debugging#/runtime/this-firefox` →
+**Load Temporary Add-on…** → select `dist/firefox/manifest.json`. Temporary add-ons are removed when
+Firefox closes; use the Firefox Add-ons store for a permanent install.
 
 ## Features
 
@@ -186,9 +191,13 @@ extension (`extension-key.pem`) is **not** in the repository; keep it secret.
 
 - Free/public proxies are not trustworthy: they can see or modify unencrypted (`http://`) traffic.
   Do not use them for logins or sensitive tasks. HTTPS sites stay end-to-end encrypted.
-- Chrome does not support username/password for SOCKS5 proxies (HTTP proxies are supported).
-- Chromium-based browsers only (Chrome, Edge, Brave, Opera, Vivaldi). Only one extension can control
-  the proxy setting at a time — disable other proxy/VPN extensions.
+- Chrome/Edge do not support username/password for SOCKS5 proxies (HTTP proxies are supported);
+  Firefox supports both.
+- Supported browsers: Chromium-based (Chrome, Edge, Brave, Opera, Vivaldi) and Firefox 140+. Only one
+  extension can control the proxy setting at a time — disable other proxy/VPN extensions.
+- Firefox: if you added private proxies with a username/password, their credentials are synced only after
+  you grant the optional "authentication information" data permission (Settings → Sync → **Sync now**).
+  Firefox sync uses your Mozilla account and only works between Firefox browsers.
 - While connected, list downloads (HTTPS sources) go through the active proxy.
 - City and ISP are looked up only for working proxies (the free ip-api.com tier allows 15 batch
   requests per minute).
@@ -202,9 +211,11 @@ On every push to `main`, GitHub Actions runs the tests
 ([`.github/workflows/release.yml`](.github/workflows/release.yml)). If there is no `vX.Y.Z` tag yet for
 the version in `extension/manifest.json`, it also:
 
-1. builds the store package (`npm run build` → `dist/proxyscout-<version>.zip`),
-2. creates a GitHub Release with the package,
-3. uploads the package to the **Chrome Web Store** and **Edge Add-ons** and submits it for review.
+1. builds the store packages (`npm run build` → `dist/proxyscout-<version>.zip` for Chrome/Edge and
+   `dist/proxyscout-firefox-<version>.zip` for Firefox),
+2. creates a GitHub Release with both packages,
+3. uploads them to the **Chrome Web Store**, **Edge Add-ons** and **Firefox Add-ons** and submits them
+   for review.
 
 To ship a fix, bump the version and push:
 
@@ -249,20 +260,38 @@ when its secrets are missing.
 3. **Publish API** page → **Create API credentials** → `EDGE_CLIENT_ID`, `EDGE_API_KEY`
    (API keys expire; update the secret when renewed).
 
+**Firefox Add-ons** (free)
+
+1. <https://addons.mozilla.org/developers/> → **Submit a New Add-on** → *On this site* → upload
+   `dist/proxyscout-firefox-<version>.zip`. No source code upload is needed (the code is not minified or
+   bundled). Fill in the listing → submit.
+2. **Tools → Manage API Keys** → generate credentials → JWT issuer → `AMO_JWT_ISSUER`, JWT secret →
+   `AMO_JWT_SECRET`.
+3. The Firefox add-on ID is fixed in the build (`proxyscout@halil-kaplan.github.io`); never change it, or
+   updates become a new add-on.
+
 **Store IDs and Google sign-in:** the stores give the extension their own IDs. For Google Drive sync to
 work in the store builds, add two more redirect URIs to the OAuth client (**Google Auth Platform →
 Clients → ProxyScout Extension**): `https://<chrome-store-id>.chromiumapp.org/` and
-`https://<edge-store-id>.chromiumapp.org/`. Update the links in the "Install" table once the stores are live.
+`https://<edge-store-id>.chromiumapp.org/`. Firefox uses `https://<hash>.extensions.allizom.org/`, derived
+from the add-on ID; Settings → Sync shows the exact address. Update the links in the "Install" table once
+the stores are live.
 
 ## Development
 
 No build step: edit the files and reload the extension in `chrome://extensions`.
 
+The Firefox package is generated from the same files by `npm run build` (`dist/firefox/`): Manifest V2
+with a persistent background page, so the `proxy.onRequest` listener never sleeps and traffic cannot
+leak around the proxy while connected.
+
 ```
 extension/
-  manifest.json          Manifest V3
-  background.js          download, test, connect, auto switch, sync (service worker)
-  lib/pac.js             PAC script generation
+  manifest.json          Manifest V3 (Chrome/Edge; the Firefox MV2 manifest is generated by build-zip.mjs)
+  background.js          download, test, connect, auto switch, sync (service worker / Firefox background page)
+  lib/pac.js             PAC script generation and the same decision in JS (Firefox proxy.onRequest)
+  lib/platform.js        Chrome/Firefox differences, Firefox data-collection permission
+  lib/firefox-shim.js    Firefox only: maps chrome.* to the promise-based browser.*
   lib/parse.js           list parser
   lib/sources.js         built-in sources
   lib/geoip.js           offline IP → country lookup (data/ipv4-country.bin)
@@ -279,12 +308,14 @@ tests/
   logic.test.mjs         parser, PAC and geo database tests
   i18n.test.mjs          translation keys and source structure
   sync.test.mjs          sync snapshot, merge, quota, input validation, Drive client
+  firefox.test.mjs       Firefox: PAC/JS decision parity, ProxyInfo, generated manifest
   e2e.mjs                end-to-end test in Chrome for Testing (needs puppeteer)
+  e2e-firefox.mjs        end-to-end test in Firefox (needs selenium-webdriver): auth HTTP/SOCKS5, no leak on dead proxy
   sync-e2e.mjs           two-browser sync test
   bench.mjs              real-site comparison of proxies that passed / failed the HTTPS test
 tools/
-  build-zip.mjs          store package (npm run build)
-  publish.mjs            upload to Chrome Web Store / Edge Add-ons (used by GitHub Actions)
+  build-zip.mjs          store packages: Chrome/Edge and Firefox (npm run build)
+  publish.mjs            upload to Chrome Web Store / Edge Add-ons / Firefox Add-ons (used by GitHub Actions)
   bump-version.mjs       bump the version (npm run bump)
   store-assets.mjs       store screenshots and promo tiles (puppeteer)
   build-geo.mjs          country database from DB-IP Lite

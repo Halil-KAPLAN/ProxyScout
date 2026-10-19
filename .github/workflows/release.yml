@@ -1,6 +1,6 @@
 # main dalına gelen her değişiklikte testler çalışır. manifest.json'daki sürüm için henüz bir
-# etiket (v1.2.3) yoksa: paket üretilir, GitHub Release oluşturulur ve Chrome Web Store ile
-# Edge Add-ons'a yüklenip incelemeye gönderilir. Sürümü artırmak: `npm run bump` (README → Yayın).
+# etiket (v1.2.3) yoksa: paketler üretilir, GitHub Release oluşturulur ve Chrome Web Store, Edge Add-ons
+# ve Firefox Add-ons'a yüklenip incelemeye gönderilir. Sürümü artırmak: `npm run bump` (README → Yayın).
 # Actions → Release → Run workflow → "Yalnızca mağaza anahtarlarını sına" seçilirse hiçbir şey
 # yüklenmez; yalnızca gizli değerlerin doğru olup olmadığı denenir.
 name: Release
@@ -44,6 +44,8 @@ jobs:
       EDGE_PRODUCT_ID: ${{ secrets.EDGE_PRODUCT_ID }}
       EDGE_CLIENT_ID: ${{ secrets.EDGE_CLIENT_ID }}
       EDGE_API_KEY: ${{ secrets.EDGE_API_KEY }}
+      AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+      AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -54,6 +56,9 @@ jobs:
       - name: Edge Add-ons anahtarları
         if: ${{ !cancelled() }}
         run: node tools/publish.mjs edge --check
+      - name: Firefox Add-ons anahtarları
+        if: ${{ !cancelled() }}
+        run: node tools/publish.mjs firefox --check
 
   release:
     needs: test
@@ -63,6 +68,7 @@ jobs:
       version: ${{ steps.ver.outputs.version }}
       new: ${{ steps.ver.outputs.new }}
       zip: ${{ steps.build.outputs.zip }}
+      firefox_zip: ${{ steps.build.outputs.firefox_zip }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -87,13 +93,15 @@ jobs:
         if: steps.ver.outputs.new == 'true'
         with:
           name: package
-          path: ${{ steps.build.outputs.zip }}
+          path: |
+            ${{ steps.build.outputs.zip }}
+            ${{ steps.build.outputs.firefox_zip }}
       - name: GitHub Release
         if: steps.ver.outputs.new == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v${{ steps.ver.outputs.version }}" "${{ steps.build.outputs.zip }}" \
+          gh release create "v${{ steps.ver.outputs.version }}" "${{ steps.build.outputs.zip }}" "${{ steps.build.outputs.firefox_zip }}" \
             --title "ProxyScout ${{ steps.ver.outputs.version }}" --generate-notes --target "${{ github.sha }}"
 
   chrome:
@@ -138,3 +146,23 @@ jobs:
           path: dist
       - name: Edge Add-ons'a yükle
         run: node tools/publish.mjs edge "${{ needs.release.outputs.zip }}"
+
+  firefox:
+    needs: release
+    if: needs.release.outputs.new == 'true'
+    runs-on: ubuntu-latest
+    env:
+      AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
+      AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
+      VERSION: ${{ needs.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/download-artifact@v4
+        with:
+          name: package
+          path: dist
+      - name: Firefox Add-ons'a yükle
+        run: node tools/publish.mjs firefox "${{ needs.release.outputs.firefox_zip }}"

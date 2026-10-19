@@ -1,6 +1,6 @@
 # ProxyScout — Gizlilik Politikası / Privacy Policy
 
-_Son güncelleme / Last updated: 19.10.2026_
+_Son güncelleme / Last updated: 19.10.2026 (Firefox)_
 
 ## Türkçe
 
@@ -26,7 +26,11 @@ eklediğiniz proxy'ler (kullanıcı adı/şifre dahil), kaynak seçimleri ve aya
 **Senkronizasyon (isteğe bağlı):**
 - _Chrome senkronu_: Özet (çalışan proxy'ler, favoriler, kendi proxy'leriniz, kaynak seçimleri,
   ayarlar), Chrome'a giriş yaptığınız Google hesabının senkron alanında (`chrome.storage.sync`)
-  saklanır. Ayarlar'dan kapatılabilir.
+  saklanır. Ayarlar'dan kapatılabilir. Firefox'ta aynı özet, Firefox'a giriş yaptığınız Mozilla
+  hesabının senkron alanında (Firefox Sync) tutulur.
+- _Firefox'ta özel proxy şifreleri_: Kendi eklediğiniz proxy'lerin kullanıcı adı/şifresi, yalnızca
+  Firefox'un isteğe bağlı "kimlik doğrulama bilgisi" veri iznini verirseniz senkrona yazılır; izin
+  vermezseniz şifreler yalnızca bu cihazda kalır.
 - _Google Drive_: "Google ile bağlan" derseniz aynı özet, Google Drive'ınızda yalnızca bu
   eklentinin erişebildiği gizli uygulama klasöründe (`drive.appdata`) tek bir dosya olarak tutulur.
   Eklenti yalnızca bu klasöre ve hesabınızın e-posta adresine (hangi hesapla bağlı olduğunuzu
@@ -63,7 +67,9 @@ connected); Google, only if you turn on sync.
 
 **Sync (optional):** With _Chrome sync_ a summary (working proxies, favorites, your proxies, source
 choices, settings) is stored in the sync storage of the Google account you are signed in to Chrome
-with. With _Google Drive_ the same summary is stored as one file in a hidden app folder that only this
+with (in Firefox: Firefox Sync, with your Mozilla account). In Firefox, the usernames/passwords of
+proxies you added are written to sync only if you grant Firefox's optional "authentication
+information" data permission; otherwise they stay on this device. With _Google Drive_ the same summary is stored as one file in a hidden app folder that only this
 extension can access (`drive.appdata`); the extension also reads your account e-mail to show which
 account is connected, and cannot see your other Drive files. The access token is kept in memory for
 the browser session only. Use of Google user data complies with the

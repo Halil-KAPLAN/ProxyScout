@@ -26,6 +26,7 @@ trafiği o proxy üzerinden geçer; tek anahtarla kapatılır.
 | --- | --- |
 | Chrome, Brave, Opera, Vivaldi | **Chrome Web Store** — _yayın onayı bekleniyor_ <!-- CWS_LINK --> |
 | Microsoft Edge | **Edge Add-ons** — _yayın onayı bekleniyor_ <!-- EDGE_LINK --> |
+| Firefox (masaüstü, 140+) | **Firefox Add-ons** — _yakında_ <!-- AMO_LINK --> |
 
 ### GitHub'dan (geliştirici modu)
 
@@ -37,6 +38,10 @@ trafiği o proxy üzerinden geçer; tek anahtarla kapatılır.
 5. Araç çubuğundaki yapboz simgesinden ProxyScout'u sabitleyin.
 
 İlk kurulumda yönetici sayfası otomatik açılır.
+
+**Firefox (geçici, deneme için):** `npm run build` çalıştırın, `about:debugging#/runtime/this-firefox` →
+**Geçici Eklenti Yükle…** → `dist/firefox/manifest.json` dosyasını seçin. Geçici eklentiler Firefox
+kapanınca kaldırılır; kalıcı kurulum için Firefox Add-ons mağazasını kullanın.
 
 ## Özellikler
 
@@ -181,9 +186,13 @@ paketlemek için gereken özel anahtar (`extension-key.pem`) depoda **yoktur**; 
 - Ücretsiz/açık proxy'ler güvenilir değildir: şifresiz (`http://`) trafiğinizi görebilir veya
   değiştirebilirler. Şifre girdiğiniz ya da hassas işlem yaptığınız sitelerde kullanmayın. HTTPS siteler
   uçtan uca şifreli kalır.
-- Chrome, SOCKS5 proxy'lerde kullanıcı adı/şifreyi desteklemez (HTTP proxy'lerde destekler).
-- Yalnızca Chromium tabanlı tarayıcılar (Chrome, Edge, Brave, Opera, Vivaldi). Proxy ayarını aynı anda
-  tek bir eklenti kontrol edebilir; başka bir proxy/VPN eklentisi varsa devre dışı bırakın.
+- Chrome/Edge, SOCKS5 proxy'lerde kullanıcı adı/şifreyi desteklemez (HTTP proxy'lerde destekler);
+  Firefox ikisini de destekler.
+- Desteklenen tarayıcılar: Chromium tabanlılar (Chrome, Edge, Brave, Opera, Vivaldi) ve Firefox 140+.
+  Proxy ayarını aynı anda tek bir eklenti kontrol edebilir; başka bir proxy/VPN eklentisi varsa devre dışı bırakın.
+- Firefox: kullanıcı adı/şifreli özel proxy eklediyseniz bu bilgiler, isteğe bağlı "kimlik doğrulama
+  bilgisi" veri iznini verdikten sonra senkronlanır (Ayarlar → Senkronizasyon → **Şimdi senkronize et**).
+  Firefox senkronu Mozilla hesabınızla çalışır ve yalnızca Firefox'lar arasındadır.
 - Bağlıyken liste indirme (HTTPS kaynaklar) aktif proxy üzerinden yapılır.
 - Şehir ve ISP yalnızca çalışan proxy'ler için sorgulanır (ip-api.com ücretsiz sürümü dakikada 15 toplu sorgu).
 - Gömülü ülke veritabanı aylık güncellenir; yenilemek için `node tools/build-geo.mjs`.
@@ -196,9 +205,10 @@ paketlemek için gereken özel anahtar (`extension-key.pem`) depoda **yoktur**; 
 ([`.github/workflows/release.yml`](.github/workflows/release.yml)). `extension/manifest.json` içindeki
 sürüm için henüz `vX.Y.Z` etiketi yoksa ayrıca:
 
-1. mağaza paketi üretilir (`npm run build` → `dist/proxyscout-<sürüm>.zip`),
-2. GitHub Release oluşturulur ve paket eklenir,
-3. paket **Chrome Web Store**'a ve **Edge Add-ons**'a yüklenip incelemeye gönderilir.
+1. mağaza paketleri üretilir (`npm run build` → Chrome/Edge için `dist/proxyscout-<sürüm>.zip`, Firefox
+   için `dist/proxyscout-firefox-<sürüm>.zip`),
+2. GitHub Release oluşturulur ve iki paket eklenir,
+3. paketler **Chrome Web Store**, **Edge Add-ons** ve **Firefox Add-ons**'a yüklenip incelemeye gönderilir.
 
 Bir düzeltmeyi yayınlamak için sürümü artırıp gönderin:
 
@@ -242,21 +252,37 @@ eklenir; anahtarı olmayan mağaza atlanır.
 3. **Publish API** → **API kimlik bilgileri oluştur** → `EDGE_CLIENT_ID`, `EDGE_API_KEY` (API anahtarlarının
    son kullanma tarihi vardır; yenilendiğinde gizli anahtarı güncelleyin).
 
+**Firefox Add-ons** (ücretsiz)
+
+1. <https://addons.mozilla.org/developers/> → **Submit a New Add-on** → *On this site* →
+   `dist/proxyscout-firefox-<sürüm>.zip` yüklenir. Kaynak kod yüklemek gerekmez (kod küçültülmüş ya da
+   paketlenmiş değildir). Mağaza bilgileri doldurulup gönderilir.
+2. **Tools → Manage API Keys** → kimlik bilgisi üretin → JWT issuer → `AMO_JWT_ISSUER`, JWT secret →
+   `AMO_JWT_SECRET`.
+3. Firefox eklenti kimliği pakette sabittir (`proxyscout@halil-kaplan.github.io`); değiştirmeyin, yoksa
+   güncellemeler yeni bir eklenti sayılır.
+
 **Mağaza kimlikleri ve Google girişi:** Mağazalar eklentiye kendi kimliğini verir. Google Drive
 senkronunun mağaza sürümlerinde çalışması için OAuth istemcisine (**Google Auth Platform → Clients →
 ProxyScout Extension**) iki yönlendirme adresi daha ekleyin: `https://<chrome-mağaza-kimliği>.chromiumapp.org/`
-ve `https://<edge-mağaza-kimliği>.chromiumapp.org/`. Mağazalar yayına girince "Kurulum" tablosundaki
-bağlantıları güncelleyin.
+ve `https://<edge-mağaza-kimliği>.chromiumapp.org/`. Firefox eklenti kimliğinden türeyen
+`https://<hash>.extensions.allizom.org/` adresini kullanır; tam adres Ayarlar → Senkronizasyon'da görünür.
+Mağazalar yayına girince "Kurulum" tablosundaki bağlantıları güncelleyin.
 
 ## Geliştirme
 
 Derleme adımı yoktur; dosyaları düzenleyip `chrome://extensions` sayfasında eklentiyi yenilemeniz yeterli.
 Klasör yapısı ve araçlar için [İngilizce README → Development](README.md#development) bölümüne bakın.
 
+Firefox paketi aynı dosyalardan `npm run build` ile üretilir (`dist/firefox/`): Manifest V2 ve kalıcı
+arka plan sayfası. Böylece `proxy.onRequest` dinleyicisi hiç uyumaz ve bağlıyken trafik proxy'yi atlayıp
+gerçek IP'yi sızdıramaz.
+
 ```
 npm test                 # birim testleri (node --test)
-npm run build            # dist/proxyscout-<sürüm>.zip
+npm run build            # dist/proxyscout-<sürüm>.zip, dist/proxyscout-firefox-<sürüm>.zip, dist/firefox/
 node tests/e2e.mjs <puppeteer klasörü> [ekran görüntüsü klasörü]
+node tests/e2e-firefox.mjs <selenium-webdriver klasörü> [ekran görüntüsü klasörü] [firefox.exe]
 ```
 
 ## Gizlilik

@@ -1,11 +1,16 @@
-// Mağazalara yüklenecek paketi üretir: dist/proxyscout-<sürüm>.zip
+// Mağazalara yüklenecek paketleri üretir:
+//   dist/proxyscout-<sürüm>.zip          — Chrome Web Store ve Edge Add-ons (Manifest V3)
+//   dist/proxyscout-firefox-<sürüm>.zip  — Firefox Add-ons (Manifest V2, aynı kaynak dosyalar)
+//   dist/firefox/                        — Firefox paketinin açılmış hâli (about:debugging ve testler için)
 // Kullanım: node tools/build-zip.mjs
 // - manifest.json'daki "key" alanı çıkarılır (Chrome Web Store ve Edge bu alanı kabul etmez;
 //   mağaza kendi eklenti kimliğini verir).
+// - Firefox paketi MV2'dir: kalıcı arka plan sayfası sayesinde proxy.onRequest dinleyicisi hiç uyumaz,
+//   bağlıyken trafik doğrudan çıkıp gerçek IP'yi sızdırmaz (MV3'ün askıya alınan arka planında bu garanti yok).
 // - Bağımlılıksızdır (ZIP biçimi elle yazılır); dosya tarihleri sabit olduğu için aynı kaynaktan
 //   her zaman aynı paket çıkar.
-import { readFileSync, writeFileSync, readdirSync, statSync, mkdirSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { readFileSync, writeFileSync, readdirSync, statSync, mkdirSync, rmSync } from 'node:fs';
+import { join, relative, sep, dirname, resolve } from 'node:path';
 import { deflateRawSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
@@ -81,17 +86,99 @@ function zip(files) {
   return Buffer.concat([...locals, cd, end]);
 }
 
-const manifest = JSON.parse(readFileSync(join(EXT, 'manifest.json'), 'utf8'));
-delete manifest.key;
-const files = walk(EXT)
-  .map((p) => relative(EXT, p).split(sep).join('/'))
-  .filter((name) => !/(^|\/)\.|\.DS_Store$|Thumbs\.db$/.test(name))
-  .sort()
-  .map((name) => ({ name, data: name === 'manifest.json' ? Buffer.from(JSON.stringify(manifest, null, 2) + '\n') : readFileSync(join(EXT, name)) }));
+// Firefox eklenti kimliği. Mağazadaki eklentiyi bu kimlik belirler; değiştirilirse güncellemeler yeni bir eklenti sayılır.
+export const GECKO_ID = 'proxyscout@halil-kaplan.github.io';
 
-mkdirSync(DIST, { recursive: true });
-const out = join(DIST, `proxyscout-${manifest.version}.zip`);
-const buf = zip(files);
-writeFileSync(out, buf);
-console.log(`${relative(ROOT, out)} · ${files.length} dosya · ${(buf.length / 1024).toFixed(0)} KB · sürüm ${manifest.version}`);
-if (process.env.GITHUB_OUTPUT) writeFileSync(process.env.GITHUB_OUTPUT, `zip=${relative(ROOT, out).split(sep).join('/')}\nversion=${manifest.version}\n`, { flag: 'a' });
+// MV3 manifestinden Firefox (MV2) manifesti üretir.
+export function firefoxManifest(m) {
+  const permissions = m.permissions.filter((p) => p !== 'webRequestAuthProvider');
+  permissions.splice(permissions.indexOf('webRequest') + 1, 0, 'webRequestBlocking');
+  const out = {
+    manifest_version: 2,
+    name: m.name,
+    short_name: m.short_name,
+    version: m.version,
+    description: m.description,
+    default_locale: m.default_locale,
+    homepage_url: m.homepage_url,
+    permissions: [...permissions, ...(m.host_permissions || [])],
+    background: { page: 'background.html', persistent: true },
+    browser_action: m.action,
+    options_ui: m.options_ui,
+    icons: m.icons,
+    browser_specific_settings: {
+      gecko: {
+        id: GECKO_ID,
+        // 140: Firefox'un yerleşik veri toplama izni penceresi (data_collection_permissions) bu sürümde geldi.
+        strict_min_version: '140.0',
+        data_collection_permissions: {
+          required: ['none'],
+          // Yalnızca senkron açıkken, kullanıcının eklediği özel proxy'lerin kullanıcı adı/şifresi (lib/platform.js).
+          optional: ['authenticationInfo'],
+        },
+      },
+    },
+  };
+  return out;
+}
+
+// Firefox'un MV2'sinde chrome.* Promise döndürmez; sayfalar modüllerden önce chrome → browser eşlemesini yükler
+// (lib/firefox-shim.js). Bu dosya Chrome/Edge paketine konmaz.
+const SHIM_TAG = '<script src="lib/firefox-shim.js"></script>';
+const FIREFOX_BG_PAGE = `<!doctype html>\n<meta charset="utf-8">\n${SHIM_TAG}\n<script type="module" src="background.js"></script>\n`;
+
+function withShim(name, data) {
+  if (!/^(manager|popup)\.html$/.test(name)) return data;
+  const html = data.toString('utf8');
+  const out = html.replace(/(<script type="module")/, `${SHIM_TAG}\n  $1`);
+  if (out === html) throw new Error(`${name}: modül betiği bulunamadı, Firefox eşlemesi eklenemedi`);
+  return Buffer.from(out);
+}
+
+const json = (o) => Buffer.from(JSON.stringify(o, null, 2) + '\n');
+
+function sourceFiles() {
+  return walk(EXT)
+    .map((p) => relative(EXT, p).split(sep).join('/'))
+    .filter((name) => !/(^|\/)\.|\.DS_Store$|Thumbs\.db$/.test(name))
+    .sort()
+    .map((name) => ({ name, data: readFileSync(join(EXT, name)) }));
+}
+
+function writeZip(file, files, label) {
+  const out = join(DIST, file);
+  const buf = zip(files);
+  writeFileSync(out, buf);
+  console.log(`${relative(ROOT, out)} · ${label} · ${files.length} dosya · ${(buf.length / 1024).toFixed(0)} KB`);
+  return relative(ROOT, out).split(sep).join('/');
+}
+
+export function build() {
+  const manifest = JSON.parse(readFileSync(join(EXT, 'manifest.json'), 'utf8'));
+  delete manifest.key;
+  const src = sourceFiles();
+  mkdirSync(DIST, { recursive: true });
+
+  const chromeFiles = src.filter((f) => f.name !== 'lib/firefox-shim.js').map((f) => (f.name === 'manifest.json' ? { name: f.name, data: json(manifest) } : f));
+  const chromeZip = writeZip(`proxyscout-${manifest.version}.zip`, chromeFiles, 'Chrome/Edge');
+
+  const ffFiles = [
+    ...src.map((f) => (f.name === 'manifest.json' ? { name: f.name, data: json(firefoxManifest(manifest)) } : { name: f.name, data: withShim(f.name, f.data) })),
+    { name: 'background.html', data: Buffer.from(FIREFOX_BG_PAGE) },
+  ].sort((a, b) => (a.name < b.name ? -1 : 1));
+  const firefoxZip = writeZip(`proxyscout-firefox-${manifest.version}.zip`, ffFiles, 'Firefox');
+  const ffDir = join(DIST, 'firefox');
+  rmSync(ffDir, { recursive: true, force: true });
+  for (const f of ffFiles) {
+    mkdirSync(dirname(join(ffDir, f.name)), { recursive: true });
+    writeFileSync(join(ffDir, f.name), f.data);
+  }
+
+  console.log(`sürüm ${manifest.version}`);
+  if (process.env.GITHUB_OUTPUT) {
+    writeFileSync(process.env.GITHUB_OUTPUT, `zip=${chromeZip}\nfirefox_zip=${firefoxZip}\nversion=${manifest.version}\n`, { flag: 'a' });
+  }
+  return { chromeZip, firefoxZip, version: manifest.version };
+}
+
+if (process.argv[1] && resolve(process.argv[1]).toLowerCase() === fileURLToPath(import.meta.url).toLowerCase()) build();
