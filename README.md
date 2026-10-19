@@ -1,187 +1,311 @@
-# ProxyScout — Proxy Bulucu ve Değiştirici (Chrome / Edge eklentisi)
+# ProxyScout — Proxy Finder & Switcher
 
 [![Release](https://github.com/Halil-KAPLAN/ProxyScout/actions/workflows/release.yml/badge.svg)](https://github.com/Halil-KAPLAN/ProxyScout/actions/workflows/release.yml)
-[![Sürüm](https://img.shields.io/github/v/release/Halil-KAPLAN/ProxyScout)](https://github.com/Halil-KAPLAN/ProxyScout/releases/latest)
-[![Lisans: GPL-3.0](https://img.shields.io/badge/lisans-GPL--3.0-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/github/v/release/Halil-KAPLAN/ProxyScout)](https://github.com/Halil-KAPLAN/ProxyScout/releases/latest)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](LICENSE)
 
-Proxy Switcher benzeri bir tarayıcı eklentisi. Ücretsiz proxy listelerini onlarca siteden indirir,
-hepsini test eder, çalışanları **Elit + HTTPS / Elit / Anonim / Şeffaf** gibi kategorilere,
-çalışmayanları **Ölüler / Kalıcı ölü** kategorisine ayırır. Listeden bir proxy'ye tıklayınca tüm
-tarayıcı trafiği o proxy üzerinden geçer; tek tıkla kapatıp açabilirsiniz.
+**English** · [Türkçe](README.tr.md)
 
-## Kurulum
+A Chrome / Edge extension in the spirit of *Proxy Switcher*. ProxyScout downloads free proxy lists
+from dozens of sources, really tests every proxy (HTTP **and** HTTPS), sorts the working ones into
+**Elite + HTTPS / Elite / Anonymous / Transparent** groups and the rest into **Dead**. Click a proxy and
+all browser traffic goes through it; one switch turns it off again.
 
-### Mağazalardan (önerilen)
+![Working proxies, tested and sorted](store/screenshots/en/01-list.png)
 
-| Tarayıcı | Bağlantı |
+| | |
 | --- | --- |
-| Chrome, Brave, Opera, Vivaldi | **Chrome Web Store** — _yayın onayı bekleniyor_ <!-- CWS_LINK --> |
-| Microsoft Edge | **Edge Add-ons** — _yayın onayı bekleniyor_ <!-- EDGE_LINK --> |
+| ![One-click connect from the popup](store/screenshots/en/02-popup.png) | ![Sorted by anonymity level](store/screenshots/en/03-cats.png) |
+| ![Choose sources and proxy types](store/screenshots/en/04-sources.png) | ![Sync across browsers](store/screenshots/en/05-sync.png) |
 
-### GitHub'dan (geliştirici modu)
+## Install
 
-1. [Son sürümün](https://github.com/Halil-KAPLAN/ProxyScout/releases/latest) `proxyscout-x.y.z.zip`
-   dosyasını indirip bir klasöre açın (ya da depoyu klonlayıp `extension` klasörünü kullanın).
-2. Chrome'da `chrome://extensions` (Edge'de `edge://extensions`) adresini açın.
-3. Sağ üstten **Geliştirici modu**nu açın.
-4. **Paketlenmemiş öğe yükle** → açtığınız klasörü (ya da `extension` klasörünü) seçin.
-5. Araç çubuğundaki yapboz simgesinden ProxyScout'u sabitleyin.
+### From the stores (recommended)
 
-İlk kurulumda yönetici sayfası otomatik açılır.
-
-## Kullanım
-
-| İşlem | Nerede |
+| Browser | Link |
 | --- | --- |
-| Listeleri indir ve test et | Popup veya yönetici → **Listeleri indir ve test et** |
-| Proxy'ye bağlan | Popup'ta proxy'ye tıklayın, yönetici sayfasında satıra **çift tıklayın** veya **Bağlan**. Bağlantı doğrulanırken satırda ve üst çubukta dönen bir **Bağlanıyor** göstergesi çıkar; sonuç (gecikme ya da hata) bildirim olarak gösterilir |
-| Proxy'yi aç / kapat | Tek bir anahtar: yönetici sayfasında bağlantı kartının içinde, popup'ta üstte. Rengi durumu gösterir (yeşil bağlı, turuncu bağlanıyor, kırmızı yanıt yok); kapatmak bağlanmayı da iptal eder |
-| Listeyi sırala | Sütun başlığına tıklayın ya da sağdaki **Sırala** düğmesine basın. Bağlanırken ve test sürerken liste yerinde kalır; test bitince yeniden sıralanır |
-| Çalışanları / ölüleri yeniden tara | **Test et ▾** menüsü (seçilenler, görünenler, yeniler, çalışanlar, ölüler, hepsi) |
-| Ölüleri temizle | **Sil ▾** → Kalıcı ölüleri / tüm ölüleri sil |
-| Kendi proxy'lerinizi ekleyin | **İçe aktar** (`ip:port`, `socks5://ip:port`, `kullanıcı:şifre@ip:port`, `ip:port:kullanıcı:şifre`) |
-| Kaynakları seçin | Sol menü → **Kaynaklar**: her site tek satırdır; aç/kapa anahtarı ve **HTTP / SOCKS4 / SOCKS5** onay kutularıyla hangi türlerin indirileceğini seçin |
-| Yeni liste sitesi ekleyin | **Kaynaklar** → URL ve tür girip **Kaynak ekle** |
-| Dil | Sol alttaki **Dil** seçimi veya **Ayarlar → Dil**: Türkçe, English ya da *Otomatik* (tarayıcının dili; varsayılan) |
-| Otomatik geçiş | Bağlı proxy ölürse en iyi çalışan proxy'ye kendiliğinden geçer (Proxy Switcher'daki *Auto Switch*) |
-| Çıkış IP'nizi görün | **IP'mi göster** |
+| Chrome, Brave, Opera, Vivaldi | **Chrome Web Store** — _awaiting review_ <!-- CWS_LINK --> |
+| Microsoft Edge | **Edge Add-ons** — _awaiting review_ <!-- EDGE_LINK --> |
 
-Kısayollar (yönetici): çift tık = bağlan, `Enter` = seçiliye bağlan, `Del` = sil, `Ctrl+A` = tümünü seç, `Shift/Ctrl+tık` = çoklu seçim.
+### From GitHub (developer mode)
 
-## Kategoriler
+1. Download `proxyscout-x.y.z.zip` from the [latest release](https://github.com/Halil-KAPLAN/ProxyScout/releases/latest)
+   and extract it (or clone the repository and use the `extension` folder).
+2. Open `chrome://extensions` (Edge: `edge://extensions`).
+3. Turn on **Developer mode** (top right).
+4. **Load unpacked** → select the extracted folder (or `extension`).
+5. Pin ProxyScout from the puzzle icon in the toolbar.
 
-Çalışan proxy'ler iki özelliğe göre ayrılır: **gizlilik düzeyi** ve **HTTPS desteği**. Alt
-kategoriler birbiriyle çakışmaz; her proxy tam olarak birinde yer alır ve toplamları
-"Çalışanlar" sayısına eşittir.
+The manager page opens automatically after the first install.
 
-- **Elit + HTTPS** – En iyisi: her sitede çalışır, ne IP'niz ne de proxy kullandığınız anlaşılır.
-- **Elit (yalnız HTTP)** – Elit, ama HTTPS sitelerde çalışmıyor (ya da HTTPS testi yapılmadı).
-- **HTTPS (elit değil)** – HTTPS sitelerde çalışan anonim/şeffaf proxy'ler. HTTPS sitelerde
-  bağlantı şifreli olduğundan IP'niz görünmez; `http://` sitelerde proxy (şeffafsa IP'niz) görünür.
-- **Anonim (yalnız HTTP)** – IP'niz gizli ama proxy başlıkları (`Via`, `X-Forwarded-For`) gönderilir.
-- **Şeffaf (yalnız HTTP)** – Gerçek IP'nizi sızdırır (gizlilik için kullanmayın).
-- **Kalıcı ölü** – Art arda N kez başarısız oldu (Ayarlar'dan değiştirilebilir).
+## Features
 
-"HTTPS" içeren gruplar yalnızca **gerçek site testini** geçen proxy'leri içerir (aşağıya bakın);
-tablodaki HTTPS sütunu bu testte ölçülen yanıt süresini gösterir. Popup varsayılan olarak
-"Elit+HTTPS" sekmesiyle açılır; HTTPS'te çalışmayanlar "⚠ HTTPS sitelerde çalışmaz" uyarısıyla görünür.
+- **21 built-in list sources** (ProxyScrape, free-proxy-list.net, Spys.me, monosans, TheSpeedX, …).
+  Each source is one row; choose **HTTP / SOCKS4 / SOCKS5** per source and add your own list URLs.
+  Plain text, HTML tables and `type://ip:port` lists are parsed automatically.
+- **Real tests:** every proxy is tested over HTTP, then with **two separate HTTPS connections**.
+  Proxies that load a tiny test page but fail on real websites are filtered out.
+- **Anonymity groups that never overlap:** Elite + HTTPS · Elite (HTTP only) · HTTPS (not elite) ·
+  Anonymous · Transparent. Every working proxy is in exactly one group.
+- **Country, city and flag** for every proxy as soon as it is downloaded (offline database), plus
+  city/ISP for working proxies.
+- **One-click connect** from the popup or by double-clicking in the manager; **one switch** to turn it
+  on and off. The toolbar icon shows the state: green connected, amber connecting, red not responding,
+  grey off.
+- **Auto switch:** if the connected proxy dies, ProxyScout moves to the best working proxy.
+- **Sync** your list across browsers with Chrome sync or Google Drive.
+- English and Turkish interface (follows the browser language), dark and light themes.
+- No ads, no tracking, no account needed.
 
-## Nasıl çalışıyor?
+## Usage
 
-Tarayıcı eklentileri ham TCP bağlantısı açamaz. Bu yüzden testler tarayıcının kendi ağ katmanıyla
-yapılır: eklenti tek bir **PAC betiği** kurar. Test isteğinin URL'sinde rastgele bir anahtarla
-işaretlenmiş `TÜR~ip~port` bilgisi bulunur ve PAC o isteği yalnızca o proxy'ye yönlendirir. Böylece
-yüzlerce proxy aynı anda, normal gezintinizi etkilemeden test edilir.
+| Action | Where |
+| --- | --- |
+| Download and test lists | Popup or manager → **Download & test lists** |
+| Connect to a proxy | Click it in the popup, **double-click** the row in the manager, or **Connect**. A **Connecting** spinner is shown while the connection is verified; the result (latency or error) appears as a notification |
+| Turn the proxy on / off | One switch: inside the connection card in the manager, at the top of the popup. Its color shows the state; turning it off also cancels a pending connection |
+| Sort the list | Click a column header or **Sort**. The list stays put while connecting or testing and is re-sorted when a test finishes |
+| Re-test working / dead proxies | **Test ▾** menu (selected, visible, new, working, dead, all) |
+| Clean up dead proxies | **Delete ▾** → delete permanently dead / all dead |
+| Add your own proxies | **Import** (`ip:port`, `socks5://ip:port`, `user:pass@ip:port`, `ip:port:user:pass`) |
+| Choose sources | Sidebar → **Sources**: an on/off switch and **HTTP / SOCKS4 / SOCKS5** checkboxes per site |
+| Add a list website | **Sources** → enter URL and type → **Add source** |
+| Language | **Language** at the bottom left or **Settings → Language**: Türkçe, English or *Automatic* (default) |
+| Auto switch | Switches to the best working proxy if the connected one dies |
+| See your exit IP | **Show my IP** |
 
-1. **HTTP testi** – `http://httpbin.org/get` proxy üzerinden istenir; yanıttaki IP ve başlıklara
-   göre çalışıyor mu, gizlilik düzeyi nedir, gecikme ne kadar belirlenir. İçeriği değiştiren
-   (reklam/sayfa enjekte eden) proxy'ler elenir.
-2. **HTTPS testi** – HTTP testini geçen her proxy (SOCKS dahil) üzerinden Cloudflare'e **iki ayrı**
-   HTTPS bağlantısı açılır; ikisi de doğru çıkış IP'siyle dönmelidir. Bir an çalışıp bir an düşen
-   kararsız proxy'ler böylece elenir. Test adresi (`pxs…-<tür>-<ip>-<port>-….cloudflareaccess.com`)
-   proxy bilgisini alan adında taşıdığı için PAC hiç değiştirilmeden tüm proxy'ler aynı anda test
-   edilir. Ölçüm (`tests/bench.mjs`): bu testi geçen proxy'lerle gerçek siteler (Wikipedia, GitHub,
-   Bing) **%83**, geçemeyenlerle **%7** oranında açıldı. Bağlanırken seçilen proxy HTTPS üzerinden
-   yeniden doğrulanır; yanıt vermezse ve *Otomatik geçiş* açıksa sıradaki en iyi proxy denenir.
-3. **Konum** – Her proxy'nin ülkesi indirildiği anda eklentiye gömülü çevrimdışı IP → ülke
-   veritabanından (DB-IP Lite) bulunur; test beklemeden, ölü ve yeni proxy'ler dahil hepsi
-   bayrağıyla görünür. Çalışan proxy'lerin şehri ve servis sağlayıcısı ayrıca ip-api.com ile
-   sorgulanır (bu sorgu çıkış IP'sine göre yapıldığından ülke daha kesin olur). Windows bayrak
-   emojilerini çizemediği için eklenti küçük bir bayrak fontu içerir.
+Manager shortcuts: double-click = connect, `Enter` = connect to selected, `Del` = delete,
+`Ctrl+A` = select all, `Shift/Ctrl+click` = multi-select.
 
-Bağlıyken bütün trafik seçilen proxy'den geçer; proxy ölürse trafik doğrudan bağlantıya
-**düşmez** (IP sızıntısı olmaz). Yerel ağ adresleri ve Ayarlar'daki istisna listesi doğrudan gider.
+## Categories
 
-## Senkronizasyon (tüm tarayıcılarınızda aynı liste)
+Working proxies are grouped by two properties: **anonymity level** and **HTTPS support**.
+The groups never overlap and add up to the "Working" count.
 
-Bir tarayıcıda bulduğunuz liste diğer tarayıcılarınızda da görünür; her birinde yeniden liste
-aramanız gerekmez. **Ayarlar → Senkronizasyon** bölümünden yönetilir.
+- **Elite + HTTPS** – the best: works on every site and reveals neither your IP nor that you use a proxy.
+- **Elite (HTTP only)** – elite, but does not work with HTTPS sites (or the HTTPS test was not run).
+- **HTTPS (not elite)** – anonymous/transparent proxies that work with HTTPS. On HTTPS sites the
+  connection is encrypted so your IP is not revealed; on `http://` sites the proxy (and, if
+  transparent, your IP) is visible.
+- **Anonymous (HTTP only)** – hides your IP but sends proxy headers (`Via`, `X-Forwarded-For`).
+- **Transparent (HTTP only)** – leaks your real IP (do not use for privacy).
+- **Permanently dead** – failed N times in a row (configurable in Settings).
 
-**Ne taşınır?** Çalışan proxy'ler (test sonuçları ve ülkeleriyle), favoriler, kendi eklediğiniz
-proxy'ler (kullanıcı adı/şifre dahil), kaynak seçimleri ve ayarlar. Binlerce ölü/test edilmemiş
-proxy taşınmaz; onlar her cihazda yeniden indirilebilir. Özet sıkıştırılır: 3.000 proxy ≈ 75 KB.
+The HTTPS column shows the response time measured in the HTTPS test. The popup opens on the
+"Elite+HTTPS" tab; proxies that fail HTTPS are marked "⚠ No HTTPS".
 
-**Ne sıklıkla?** Her IP değişikliği ayrı ayrı yazılmaz. Bir test bittiğinde ya da elle yapılan bir
-değişiklikten (favori, içe aktarma, ayar, kaynak) 1 dakika sonra **tek seferde**, en fazla 2
-dakikada bir yazılır; günde birkaç düzine yazma, iki yöntemin sınırlarının da çok altındadır.
-Yazmadan önce uzaktaki daha yeni veri alınır ve birleştirilir (alan bazında "son yazan kazanır").
-Diğer cihazlar değişikliği açılışta, Chrome senkronu geldiğinde ve 15 dakikada bir alır.
+## How it works
 
-### Chrome senkronu (varsayılan, kurulum gerektirmez)
+Browser extensions cannot open raw TCP connections, so the tests use the browser's own network stack:
+the extension installs a single **PAC script**. A test request carries the proxy as `TYPE~ip~port`
+behind a random per-install token, and the PAC script routes only that request through that proxy.
+Hundreds of proxies are tested in parallel without affecting normal browsing.
 
-Chrome'a giriş yaptığınız Google hesabıyla (`chrome.storage.sync`) çalışır. Aynı hesapla
-oturum açmış tüm Chrome'larda — farklı bilgisayarlar dahil — liste kendiliğinden gelir.
-Yalnızca Chrome'lar arasında çalışır (Edge kendi hesabıyla kendi arasında senkronize olur).
-Chrome'un senkron ayarlarında **Uzantılar** açık olmalıdır.
+1. **HTTP test** – `http://httpbin.org/get` is requested through the proxy. The returned IP and headers
+   tell whether it works, its anonymity level and its latency. Proxies that modify content (inject ads
+   or pages) are rejected.
+2. **HTTPS test** – every proxy that passed (SOCKS included) opens **two separate** HTTPS connections to
+   Cloudflare; both must return the proxy's exit IP, which filters out unstable proxies. The test host
+   (`pxs…-<type>-<ip>-<port>-….cloudflareaccess.com`) carries the proxy in its name, so all proxies are
+   tested at once without changing the PAC script. Measured with `tests/bench.mjs`: real websites
+   (Wikipedia, GitHub, Bing) opened **83%** of the time through proxies that passed, **7%** through
+   those that failed. The chosen proxy is verified again over HTTPS when you connect; if it does not
+   respond and *Auto switch* is on, the next best proxy is tried.
+3. **Location** – the country of every proxy comes from an offline IP → country database (DB-IP Lite)
+   bundled with the extension, so flags appear immediately for all proxies. City and ISP of working
+   proxies are looked up via ip-api.com (by exit IP, which is more accurate). Windows cannot draw flag
+   emojis, so the extension ships a small flag font.
 
-### Google Drive senkronu (Chrome, Edge, Brave… hepsinde)
+While connected all traffic goes through the selected proxy; if the proxy dies, traffic does **not**
+fall back to a direct connection (no IP leak). Local network addresses and the bypass list in Settings
+go direct.
 
-**Kullanıcı için:** Ayarlar → Senkronizasyon → **Google ile bağlan** → açılan pencerede Google
-hesabınızı seçin. Hepsi bu. Bağlandıktan sonra "…@gmail.com ile bağlı" yazar; aynı hesapla
-bağlanan tüm tarayıcılarda liste aynıdır. Liste Drive'ınızda görünmeyen, yalnızca bu eklentinin
-erişebildiği gizli uygulama klasöründe tek bir dosyada tutulur (`drive.appdata` izni; diğer
-dosyalarınız görülmez). Google erişim anahtarları 1 saat geçerlidir; eklenti bunları seçtiğiniz
-hesap için arka planda sessizce yeniler.
+## Sync (the same list in all your browsers)
 
-### Geliştirici: Google girişini bir kez yapılandırma
+The list you build in one browser shows up in your other browsers — no need to search again.
+Managed in **Settings → Sync**.
 
-> Bu depodaki `BUILTIN_CLIENT_ID` geliştiricinin kendi Google Cloud projesine aittir. Çatallayıp
-> (fork) kendi sürümünüzü dağıtacaksanız aşağıdaki adımlarla kendi istemcinizi oluşturun.
+**What is synced?** Working proxies (with test results and countries), favorites, proxies you added
+(including username/password), source choices and settings. Thousands of dead/untested proxies are not
+synced; every device can download them again. The summary is compressed: 3,000 proxies ≈ 75 KB.
 
-## Yayın ve otomatik dağıtım
+**How often?** Not on every change. It is written **in one go** when a test finishes or 1 minute after a
+manual change (favorite, import, setting, source), at most every 2 minutes — a few dozen writes a day,
+far below the limits of both methods. Newer remote data is fetched and merged before writing
+(field-level "last writer wins"). Other devices pick up changes at startup, when Chrome sync delivers
+them and every 15 minutes.
 
-`main` dalına gelen her değişiklikte GitHub Actions testleri çalıştırır
-([`.github/workflows/release.yml`](.github/workflows/release.yml)). `extension/manifest.json`
-içindeki sürüm için henüz bir `v1.2.3` etiketi yoksa ayrıca:
+### Chrome sync (default, no setup)
 
-1. mağaza paketi üretilir (`npm run build` → `dist/proxyscout-<sürüm>.zip`; manifestteki `key`
-   alanı mağazalar kabul etmediği için pakette çıkarılır),
-2. GitHub Release oluşturulur ve paket eklenir,
-3. paket **Chrome Web Store**'a ve **Edge Add-ons**'a yüklenip incelemeye gönderilir.
+Uses the Google account you are signed in to Chrome with (`chrome.storage.sync`). The list appears in
+every Chrome signed in with the same account, on any computer. Works between Chrome browsers only
+(Edge syncs among Edge browsers with its own account). **Extensions** must be enabled in Chrome's sync
+settings.
 
-Yeni bir düzeltmeyi yayınlamak için sürümü artırıp gönderin:
+### Google Drive sync (Chrome, Edge, Brave, …)
+
+Settings → Sync → **Sign in with Google** → pick your account. That's it: "Connected as …@gmail.com"
+is shown and every browser connected with the same account gets the same list. The list is kept as a
+single file in a hidden app folder in your Drive that only this extension can access (`drive.appdata`
+scope; your other files are not visible). Google access tokens last one hour; the extension renews them
+silently for the account you chose.
+
+### Developer: configuring Google sign-in once
+
+> `BUILTIN_CLIENT_ID` in this repository belongs to the developer's own Google Cloud project. If you
+> fork and distribute your own build, create your own client with the steps below.
+
+Google does not let any app access Drive without a registered OAuth client. Extensions like
+Tampermonkey embed such a client once so users never see it; ProxyScout does the same (~10 minutes,
+once):
+
+1. <https://console.cloud.google.com> → **New project** (e.g. "ProxyScout").
+2. **APIs & Services → Library** → "Google Drive API" → **Enable**.
+3. **Google Auth Platform → Branding / Audience**: app name **ProxyScout** (shown as "Continue to
+   ProxyScout" in the account chooser), support e-mail, audience **External**. **Data Access**: add
+   `.../auth/drive.appdata`, `openid`, `.../auth/userinfo.email` (all non-sensitive).
+4. **Clients → Create client** → type **Web application** → **Authorized redirect URIs**:
+   `https://<extension-id>.chromiumapp.org/` (shown in Settings → Sync → Advanced, with a **Copy** button).
+5. Put the **Client ID** (`…apps.googleusercontent.com`) into `BUILTIN_CLIENT_ID` in
+   `extension/lib/drive.js` and reload the extension. The client ID is not a secret; the client
+   **secret** is not used and must not be added to the extension.
+6. Publishing status: in **Testing** only listed test users (max. 100) can sign in. To let everyone in,
+   **Publish app** (Branding needs a homepage and privacy policy URL); the requested scopes are
+   non-sensitive, so no app verification should be required.
+
+Users can also enter their own client in **Settings → Sync → Advanced**.
+
+### About the extension ID
+
+Sync requires the extension to have the same ID on every computer, so `manifest.json` contains a fixed
+`key` (development ID: `bbhjnmkfdcibcmeikpmpcobfkiajfklc`). The stores assign their own IDs and reject
+the `key` field — `npm run build` strips it from the store package. The private key needed to pack the
+extension (`extension-key.pem`) is **not** in the repository; keep it secret.
+
+## Limitations
+
+- Free/public proxies are not trustworthy: they can see or modify unencrypted (`http://`) traffic.
+  Do not use them for logins or sensitive tasks. HTTPS sites stay end-to-end encrypted.
+- Chrome does not support username/password for SOCKS5 proxies (HTTP proxies are supported).
+- Chromium-based browsers only (Chrome, Edge, Brave, Opera, Vivaldi). Only one extension can control
+  the proxy setting at a time — disable other proxy/VPN extensions.
+- While connected, list downloads (HTTPS sources) go through the active proxy.
+- City and ISP are looked up only for working proxies (the free ip-api.com tier allows 15 batch
+  requests per minute).
+- The bundled country database is updated monthly; run `node tools/build-geo.mjs` to refresh it.
+- Deletions are not synced: a working proxy deleted on one device can come back from another device on
+  the next sync (removing a favorite does sync).
+
+## Release and automatic deployment
+
+On every push to `main`, GitHub Actions runs the tests
+([`.github/workflows/release.yml`](.github/workflows/release.yml)). If there is no `vX.Y.Z` tag yet for
+the version in `extension/manifest.json`, it also:
+
+1. builds the store package (`npm run build` → `dist/proxyscout-<version>.zip`),
+2. creates a GitHub Release with the package,
+3. uploads the package to the **Chrome Web Store** and **Edge Add-ons** and submits it for review.
+
+To ship a fix, bump the version and push:
 
 ```
-npm run bump            # 1.2.0 → 1.2.1  (minor / major / 1.3.0 de verilebilir)
-git commit -am "Sürüm 1.2.1"
+npm run bump            # 1.2.1 → 1.2.2  (also: minor / major / 1.3.0)
+git commit -am "Version 1.2.2"
 git push
 ```
 
-Sürüm artırılmadan yapılan gönderimlerde yalnızca testler çalışır; mağazalara yükleme yapılmaz.
+Pushes without a version bump only run the tests.
 
-### Bir kerelik mağaza kurulumu
+### One-time store setup
 
-Mağaza formlarına girilecek açıklamalar, izin gerekçeleri ve görseller (TR/EN):
-[`store/LISTING.md`](store/LISTING.md) ve [`store/`](store) klasörü.
+Store descriptions, permission justifications and images (EN/TR):
+[`store/LISTING.md`](store/LISTING.md) and the [`store/`](store) folder.
 
-Her iki mağazada da **ilk sürüm panelden elle yüklenir** (`npm run build` ile üretilen ya da
-[Releases](https://github.com/Halil-KAPLAN/ProxyScout/releases/latest) sayfasındaki zip);
-sonraki sürümleri iş akışı otomatik gönderir. Gerekli gizli anahtarlar GitHub'da
-**Settings → Secrets and variables → Actions** altına eklenir. Anahtarlar yoksa o mağaza atlanır.
+The **first version is uploaded manually** in each store's dashboard (zip from `npm run build` or the
+[Releases](https://github.com/Halil-KAPLAN/ProxyScout/releases/latest) page); later versions are sent by
+the workflow. Add the secrets under **Settings → Secrets and variables → Actions**; a store is skipped
+when its secrets are missing.
 
-**Chrome Web Store** (tek seferlik 5 USD geliştirici kaydı, Google hesabında 2 adımlı doğrulama şart)
+**Chrome Web Store** (one-time USD 5 developer registration, 2-step verification required)
 
-1. <https://chrome.google.com/webstore/devconsole> → **Yeni öğe** → zip'i yükleyin; mağaza girişi,
-   ekran görüntüleri ve **Gizlilik** sekmesini doldurun (gizlilik politikası:
-   `https://github.com/Halil-KAPLAN/ProxyScout/blob/main/PRIVACY.md`) → incelemeye gönderin.
-2. Panodaki **öğe kimliği** → `CWS_EXTENSION_ID`, **yayıncı kimliği** (Hesap sayfası) → `CWS_PUBLISHER_ID`.
-3. Google Cloud'da "Chrome Web Store API"yi etkinleştirip bir OAuth istemcisi (Web uygulaması,
-   yönlendirme: `https://developers.google.com/oauthplayground`) oluşturun →
-   `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`.
-4. [OAuth 2.0 Playground](https://developers.google.com/oauthplayground)'da kendi istemcinizi seçip
-   `https://www.googleapis.com/auth/chromewebstore` kapsamıyla yetki verin; çıkan
-   **refresh token** → `CWS_REFRESH_TOKEN`.
+1. <https://chrome.google.com/webstore/devconsole> → **New item** → upload the zip, fill in the listing,
+   screenshots and **Privacy** tab (privacy policy:
+   `https://github.com/Halil-KAPLAN/ProxyScout/blob/main/PRIVACY.md`) → submit for review.
+2. Item ID → `CWS_EXTENSION_ID`, publisher ID (Account page) → `CWS_PUBLISHER_ID`.
+3. In Google Cloud enable the "Chrome Web Store API" and create an OAuth client (Web application,
+   redirect URI `https://developers.google.com/oauthplayground`) → `CWS_CLIENT_ID`, `CWS_CLIENT_SECRET`.
+4. In the [OAuth 2.0 Playground](https://developers.google.com/oauthplayground) use your own client and
+   authorize the `https://www.googleapis.com/auth/chromewebstore` scope; the **refresh token** →
+   `CWS_REFRESH_TOKEN`.
 
-**Microsoft Edge Add-ons** (ücretsiz)
+**Microsoft Edge Add-ons** (free)
 
-1. <https://partner.microsoft.com/dashboard/microsoftedge> → **Yeni uzantı oluştur** → zip'i yükleyip
-   bilgileri doldurun → gönderin.
-2. Uzantının **Ürün kimliği** → `EDGE_PRODUCT_ID`.
-3. **Publish API** sayfasında **API kimlik bilgileri oluştur** → `EDGE_CLIENT_ID`, `EDGE_API_KEY`
-   (API anahtarlarının bir son kullanma tarihi vardır; yenilendiğinde gizli anahtarı güncelleyin).
+1. <https://partner.microsoft.com/dashboard/microsoftedge> → **Create new extension** → upload the zip,
+   fill in the details → submit.
+2. The extension's **Product ID** → `EDGE_PRODUCT_ID`.
+3. **Publish API** page → **Create API credentials** → `EDGE_CLIENT_ID`, `EDGE_API_KEY`
+   (API keys expire; update the secret when renewed).
 
-**Mağaza kimlikleri ve Google girişi:** Mağazalar eklentiye kendi kimliğini verir. Google Drive
-senkronunun mağaza sürümlerinde de çalışması için Google Cloud'daki OAuth istemcisine
-(**Google Auth Platform → Clients → ProxyScout Extension**) iki yönlendirme adresi daha ekleyin:
-`https://<chrome-mağaza-kimliği>.chromiumapp.org/` ve `https://<edge-mağaza-kimliği>.chromiumapp.org/`.
-Mağazalar yayına girdiğinde yukarıdaki "Kurulum" tablosundaki bağlantıları güncelleyin.
+**Store IDs and Google sign-in:** the stores give the extension their own IDs. For Google Drive sync to
+work in the store builds, add two more redirect URIs to the OAuth client (**Google Auth Platform →
+Clients → ProxyScout Extension**): `https://<chrome-store-id>.chromiumapp.org/` and
+`https://<edge-store-id>.chromiumapp.org/`. Update the links in the "Install" table once the stores are live.
+
+## Development
+
+No build step: edit the files and reload the extension in `chrome://extensions`.
+
+```
+extension/
+  manifest.json          Manifest V3
+  background.js          download, test, connect, auto switch, sync (service worker)
+  lib/pac.js             PAC script generation
+  lib/parse.js           list parser
+  lib/sources.js         built-in sources
+  lib/geoip.js           offline IP → country lookup (data/ipv4-country.bin)
+  lib/sync.js            sync snapshot: build, merge, compress, chrome.storage.sync packing
+  lib/drive.js           Google Drive appDataFolder client and OAuth helpers
+  lib/i18n.js            language selection and translation helpers
+  lib/messages.js        English / Turkish strings (add new languages here)
+  lib/ui.js              shared UI code
+  manager.*              full-page manager
+  popup.*                toolbar popup
+  _locales/              extension name/description translations
+  fonts/                 flag font (Twemoji, CC-BY 4.0)
+tests/
+  logic.test.mjs         parser, PAC and geo database tests
+  i18n.test.mjs          translation keys and source structure
+  sync.test.mjs          sync snapshot, merge, quota, input validation, Drive client
+  e2e.mjs                end-to-end test in Chrome for Testing (needs puppeteer)
+  sync-e2e.mjs           two-browser sync test
+  bench.mjs              real-site comparison of proxies that passed / failed the HTTPS test
+tools/
+  build-zip.mjs          store package (npm run build)
+  publish.mjs            upload to Chrome Web Store / Edge Add-ons (used by GitHub Actions)
+  bump-version.mjs       bump the version (npm run bump)
+  store-assets.mjs       store screenshots and promo tiles (puppeteer)
+  build-geo.mjs          country database from DB-IP Lite
+  make-icons.mjs         icons
+  make-key.mjs           fixed-ID key / print the extension ID
+```
+
+```
+npm test                 # unit tests (node --test)
+npm run build            # dist/proxyscout-<version>.zip
+node tests/e2e.mjs <puppeteer folder> [screenshot folder]
+```
+
+## Privacy
+
+ProxyScout has no servers and sends no personal data to the developer. See [PRIVACY.md](PRIVACY.md).
+
+## License
+
+[GPL-3.0](LICENSE) © Halil KAPLAN
+
+Third-party data and assets:
+
+- IP → country data: [IP Geolocation by DB-IP](https://db-ip.com) — "IP to Country Lite", CC-BY 4.0.
+- Flag font (`extension/fonts/TwemojiCountryFlags.woff2`):
+  [country-flag-emoji-polyfill](https://github.com/talkjs/country-flag-emoji-polyfill) (MIT); flag artwork
+  [Twemoji](https://github.com/twitter/twemoji) — CC-BY 4.0.
