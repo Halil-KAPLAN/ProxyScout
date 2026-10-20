@@ -281,6 +281,19 @@ the stores are live.
 
 No build step: edit the files and reload the extension in `chrome://extensions`.
 
+### Building the store packages (also for add-on reviewers)
+
+- **Requirements:** any OS (Windows, macOS or Linux) with **Node.js 20 or newer** (tested with 22.14).
+  No npm packages are needed: the build has no dependencies and no network access.
+- **Command:** `node tools/build-zip.mjs` (same as `npm run build`).
+- **Output:** `dist/proxyscout-<version>.zip` (Chrome/Edge), `dist/proxyscout-firefox-<version>.zip`
+  (Firefox) and `dist/firefox/` (the Firefox package unpacked). File dates in the zips are fixed, so the
+  same source always produces byte-identical packages.
+- **What the build does:** copies `extension/` unchanged except that it removes `key` from the Chrome
+  manifest and, for Firefox, generates a Manifest V2 `manifest.json` (`firefoxManifest()` in
+  `tools/build-zip.mjs`), adds `background.html` and inserts `<script src="lib/firefox-shim.js">` into
+  `manager.html` and `popup.html`. No code is transpiled, minified or bundled.
+
 The Firefox package is generated from the same files by `npm run build` (`dist/firefox/`): Manifest V2
 with a persistent background page, so the `proxy.onRequest` listener never sleeps and traffic cannot
 leak around the proxy while connected.
