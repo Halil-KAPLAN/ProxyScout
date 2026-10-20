@@ -1,6 +1,6 @@
 # main dalına gelen her değişiklikte testler çalışır. manifest.json'daki sürüm için henüz bir
 # etiket (v1.2.3) yoksa: paketler üretilir, GitHub Release oluşturulur ve Chrome Web Store, Edge Add-ons
-# ve Firefox Add-ons'a yüklenip incelemeye gönderilir. Sürümü artırmak: `npm run bump` (README → Yayın).
+# ve Firefox Add-ons'a yüklenip incelemeye gönderilir. Sürümü artırmak: `npm run bump` (docs/DEVELOPMENT.md → Release).
 # Actions → Release → Run workflow → "Yalnızca mağaza anahtarlarını sına" seçilirse hiçbir şey
 # yüklenmez; yalnızca gizli değerlerin doğru olup olmadığı denenir.
 name: Release
