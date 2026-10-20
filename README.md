@@ -26,7 +26,7 @@ all browser traffic goes through it; one switch turns it off again.
 | --- | --- |
 | Chrome, Brave, Opera, Vivaldi | **Chrome Web Store** — _awaiting review_ <!-- CWS_LINK --> |
 | Microsoft Edge | **Edge Add-ons** — _awaiting review_ <!-- EDGE_LINK --> |
-| Firefox (desktop, 140+) | **Firefox Add-ons** — _coming soon_ <!-- AMO_LINK --> |
+| Firefox (desktop, 140+) | **Firefox Add-ons** — _awaiting review_ <!-- AMO_LINK --> |
 
 ### From GitHub (developer mode)
 

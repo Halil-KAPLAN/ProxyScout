@@ -26,7 +26,7 @@ trafiği o proxy üzerinden geçer; tek anahtarla kapatılır.
 | --- | --- |
 | Chrome, Brave, Opera, Vivaldi | **Chrome Web Store** — _yayın onayı bekleniyor_ <!-- CWS_LINK --> |
 | Microsoft Edge | **Edge Add-ons** — _yayın onayı bekleniyor_ <!-- EDGE_LINK --> |
-| Firefox (masaüstü, 140+) | **Firefox Add-ons** — _yakında_ <!-- AMO_LINK --> |
+| Firefox (masaüstü, 140+) | **Firefox Add-ons** — _yayın onayı bekleniyor_ <!-- AMO_LINK --> |
 
 ### GitHub'dan (geliştirici modu)
 
