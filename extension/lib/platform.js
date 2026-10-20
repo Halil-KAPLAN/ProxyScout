@@ -6,6 +6,13 @@
 // browser.runtime.getBrowserInfo kullanılır.
 export const IS_FIREFOX = typeof browser !== 'undefined' && typeof browser.runtime?.getBrowserInfo === 'function';
 
+// Opera, Chromium tabanlı olsa da bazı API'leri sunmaz (help.opera.com/en/extensions/apis): storage.sync yoktur,
+// identity'de yalnızca launchWebAuthFlow vardır. Bu yüzden ikisi de varlık kontrolüyle kullanılır.
+export const HAS_BROWSER_SYNC = !!chrome.storage?.sync;
+
+// identity.getRedirectURL yoksa Chromium'un aynı adresi (https://<eklenti kimliği>.chromiumapp.org/) kullanılır.
+export const authRedirectUrl = () => chrome.identity?.getRedirectURL?.() || `https://${chrome.runtime.id}.chromiumapp.org/`;
+
 // Firefox yeni eklentilerden veri toplama beyanı ister (browser_specific_settings.gecko.data_collection_permissions).
 // ProxyScout'un dışarı gönderdiği tek kişisel veri, kullanıcının eklediği özel proxy'lerin kullanıcı adı/şifresidir
 // (senkron açıksa). Bu yüzden Firefox'ta "authenticationInfo" isteğe bağlıdır: izin verilmedikçe senkrona şifre yazılmaz.

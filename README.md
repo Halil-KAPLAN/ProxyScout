@@ -24,9 +24,10 @@ all browser traffic goes through it; one switch turns it off again.
 
 | Browser | Link |
 | --- | --- |
-| Chrome, Brave, Opera, Vivaldi | **Chrome Web Store** — _awaiting review_ <!-- CWS_LINK --> |
+| Chrome, Brave, Vivaldi | **Chrome Web Store** — _awaiting review_ <!-- CWS_LINK --> |
 | Microsoft Edge | **Edge Add-ons** — _awaiting review_ <!-- EDGE_LINK --> |
 | Firefox (desktop, 140+) | **Firefox Add-ons** — _awaiting review_ <!-- AMO_LINK --> |
+| Opera | **Opera add-ons** — _awaiting review_ <!-- OPERA_LINK --> |
 
 ### From GitHub (developer mode)
 
@@ -211,11 +212,14 @@ On every push to `main`, GitHub Actions runs the tests
 ([`.github/workflows/release.yml`](.github/workflows/release.yml)). If there is no `vX.Y.Z` tag yet for
 the version in `extension/manifest.json`, it also:
 
-1. builds the store packages (`npm run build` → `dist/proxyscout-<version>.zip` for Chrome/Edge and
-   `dist/proxyscout-firefox-<version>.zip` for Firefox),
-2. creates a GitHub Release with both packages,
+1. builds the store packages (`npm run build` → `dist/proxyscout-<version>.zip` for Chrome/Edge,
+   `dist/proxyscout-firefox-<version>.zip` for Firefox and `dist/proxyscout-opera-<version>.zip` for
+   Opera),
+2. creates a GitHub Release with all three packages,
 3. uploads them to the **Chrome Web Store**, **Edge Add-ons** and **Firefox Add-ons** and submits them
-   for review.
+   for review,
+4. opens a GitHub issue with the Opera package link and upload steps: Opera add-ons has no upload API, so
+   that version is uploaded by hand (a few minutes; see below).
 
 To ship a fix, bump the version and push:
 
@@ -270,10 +274,25 @@ when its secrets are missing.
 3. The Firefox add-on ID is fixed in the build (`proxyscout@halil-kaplan.github.io`); never change it, or
    updates become a new add-on.
 
+**Opera add-ons** (free, no API: semi-automatic)
+
+1. <https://addons.opera.com/developer/> → **Upload package** → upload
+   `dist/proxyscout-opera-<version>.zip` (not the Chrome zip: Opera's validator rejects the
+   `__MSG_…__` short name and `.bin` files, so this package has a plain-text short name and the country
+   database as `data/ipv4-country.json`).
+2. Fill in the listing: a 64×64 icon (`store/opera-icon-64.png`), at most 3 screenshots per language
+   (`store/screenshots/opera/en`, `…/tr`, 800×500). Each field is saved only after clicking the ✔ next
+   to it. Then **General → Submit changes**.
+3. Turn on **automatic moderation** for the package: versions that pass the automatic checks are published
+   without waiting for a manual review.
+4. For every new version the workflow opens an issue ("Opera add-ons: vX.Y.Z …") with the package link:
+   **Versions → Upload new version** → upload the zip → confirm the fields with ✔ → **Submit changes**,
+   then close the issue. The package ID used in the link is `OPERA_PACKAGE_ID` in the workflow.
+
 **Store IDs and Google sign-in:** the stores give the extension their own IDs. For Google Drive sync to
 work in the store builds, add two more redirect URIs to the OAuth client (**Google Auth Platform →
 Clients → ProxyScout Extension**): `https://<chrome-store-id>.chromiumapp.org/` and
-`https://<edge-store-id>.chromiumapp.org/`. Firefox uses `https://<hash>.extensions.allizom.org/`, derived
+`https://<edge-store-id>.chromiumapp.org/` (Opera: `https://<opera-store-id>.chromiumapp.org/`). Firefox uses `https://<hash>.extensions.allizom.org/`, derived
 from the add-on ID; Settings → Sync shows the exact address. Update the links in the "Install" table once
 the stores are live.
 
@@ -287,12 +306,15 @@ No build step: edit the files and reload the extension in `chrome://extensions`.
   No npm packages are needed: the build has no dependencies and no network access.
 - **Command:** `node tools/build-zip.mjs` (same as `npm run build`).
 - **Output:** `dist/proxyscout-<version>.zip` (Chrome/Edge), `dist/proxyscout-firefox-<version>.zip`
-  (Firefox) and `dist/firefox/` (the Firefox package unpacked). File dates in the zips are fixed, so the
+  (Firefox), `dist/proxyscout-opera-<version>.zip` (Opera) and `dist/firefox/` (the Firefox package
+  unpacked). File dates in the zips are fixed, so the
   same source always produces byte-identical packages.
 - **What the build does:** copies `extension/` unchanged except that it removes `key` from the Chrome
   manifest and, for Firefox, generates a Manifest V2 `manifest.json` (`firefoxManifest()` in
   `tools/build-zip.mjs`), adds `background.html` and inserts `<script src="lib/firefox-shim.js">` into
-  `manager.html` and `popup.html`. No code is transpiled, minified or bundled.
+  `manager.html` and `popup.html`. The Opera package is the Chrome package with a plain-text
+  `short_name` and `data/ipv4-country.bin` stored as base64 in `data/ipv4-country.json`. No code is
+  transpiled, minified or bundled.
 
 The Firefox package is generated from the same files by `npm run build` (`dist/firefox/`): Manifest V2
 with a persistent background page, so the `proxy.onRequest` listener never sleeps and traffic cannot
@@ -307,7 +329,7 @@ extension/
   lib/firefox-shim.js    Firefox only: maps chrome.* to the promise-based browser.*
   lib/parse.js           list parser
   lib/sources.js         built-in sources
-  lib/geoip.js           offline IP → country lookup (data/ipv4-country.bin)
+  lib/geoip.js           offline IP → country lookup (data/ipv4-country.bin; Opera: .json)
   lib/sync.js            sync snapshot: build, merge, compress, chrome.storage.sync packing
   lib/drive.js           Google Drive appDataFolder client and OAuth helpers
   lib/i18n.js            language selection and translation helpers
@@ -322,12 +344,13 @@ tests/
   i18n.test.mjs          translation keys and source structure
   sync.test.mjs          sync snapshot, merge, quota, input validation, Drive client
   firefox.test.mjs       Firefox: PAC/JS decision parity, ProxyInfo, generated manifest
+  opera.test.mjs         Opera: generated manifest, JSON country database
   e2e.mjs                end-to-end test in Chrome for Testing (needs puppeteer)
   e2e-firefox.mjs        end-to-end test in Firefox (needs selenium-webdriver): auth HTTP/SOCKS5, no leak on dead proxy
   sync-e2e.mjs           two-browser sync test
   bench.mjs              real-site comparison of proxies that passed / failed the HTTPS test
 tools/
-  build-zip.mjs          store packages: Chrome/Edge and Firefox (npm run build)
+  build-zip.mjs          store packages: Chrome/Edge, Firefox and Opera (npm run build)
   publish.mjs            upload to Chrome Web Store / Edge Add-ons / Firefox Add-ons (used by GitHub Actions)
   bump-version.mjs       bump the version (npm run bump)
   store-assets.mjs       store screenshots and promo tiles (puppeteer)

@@ -1,6 +1,6 @@
 // ProxyScout arka plan servisi: liste indirme, proxy testi, proxy'ye bağlanma, otomatik geçiş.
 // Kayıtlar ve hatalar dil anahtarı olarak tutulur; arayüz bunları seçili dilde gösterir (lib/messages.js).
-import { IS_FIREFOX, credsSyncAllowed } from './lib/platform.js';
+import { IS_FIREFOX, HAS_BROWSER_SYNC, authRedirectUrl, credsSyncAllowed } from './lib/platform.js';
 import { DEFAULT_SOURCES, enabledTypes } from './lib/sources.js';
 import { parseProxyList, parseManualList, proxyId } from './lib/parse.js';
 import { buildPac, findProxy, toProxyInfo, directiveFor, checkMarker, directMarker, httpsCheckHost } from './lib/pac.js';
@@ -847,15 +847,15 @@ const saveSyncState = () =>
 
 function syncView() {
   return {
-    chrome: { ...S.sync.chrome, enabled: !!S.settings.syncChrome },
+    chrome: { ...S.sync.chrome, enabled: !!S.settings.syncChrome && HAS_BROWSER_SYNC, available: HAS_BROWSER_SYNC },
     drive: { ...S.sync.drive, configured: !!driveClientId(), builtin: !!BUILTIN_CLIENT_ID },
-    redirectUri: chrome.identity?.getRedirectURL?.() || '',
+    redirectUri: authRedirectUrl(),
     extensionId: chrome.runtime.id,
   };
 }
 
 function syncTargets() {
-  return { chrome: !!S.settings.syncChrome, drive: !!S.sync.drive.connected };
+  return { chrome: !!S.settings.syncChrome && HAS_BROWSER_SYNC, drive: !!S.sync.drive.connected };
 }
 
 function scheduleSyncPush() {
@@ -964,7 +964,7 @@ async function getDriveToken(force = false, interactive = false) {
   if (!clientId) throw new Error('e.driveNoClient');
   let resp;
   try {
-    const url = authUrl({ clientId, redirectUri: chrome.identity.getRedirectURL(), interactive, loginHint: S.sync.drive.email });
+    const url = authUrl({ clientId, redirectUri: authRedirectUrl(), interactive, loginHint: S.sync.drive.email });
     resp = await chrome.identity.launchWebAuthFlow({ url, interactive });
   } catch (e) {
     throw new Error(interactive ? 'e.driveAuthFailed' : 'e.driveReauth');

@@ -9,7 +9,7 @@ export function resolveLang(setting) {
   if (LANGS.includes(setting)) return setting;
   let ui = 'en';
   try {
-    ui = chrome.i18n.getUILanguage() || navigator.language || 'en';
+    ui = chrome.i18n.getUILanguage?.() || navigator.language || 'en'; // Opera getUILanguage sunmayabilir
   } catch {}
   ui = ui.toLowerCase().split(/[-_]/)[0];
   return LANGS.includes(ui) ? ui : 'en';

@@ -6,7 +6,7 @@
   "license": "GPL-3.0-only",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/logic.test.mjs tests/i18n.test.mjs tests/sync.test.mjs tests/firefox.test.mjs",
+    "test": "node --test tests/logic.test.mjs tests/i18n.test.mjs tests/sync.test.mjs tests/firefox.test.mjs tests/opera.test.mjs",
     "build": "node tools/build-zip.mjs",
     "bump": "node tools/bump-version.mjs",
     "publish:chrome": "node tools/publish.mjs chrome",

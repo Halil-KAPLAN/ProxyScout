@@ -654,6 +654,10 @@ function syncLine(s, on, onText, offText) {
 function renderSync() {
   const sy = store.sync;
   if (!sy) return;
+  // Tarayıcı senkronu olmayan tarayıcılarda (Opera) seçenek gizlenir; Google Drive senkronu kalır.
+  const noBrowserSync = sy.chrome.available === false;
+  $('#settingsForm').elements.syncChrome.closest('label').hidden = noBrowserSync;
+  $('#syncChromeStatus').hidden = noBrowserSync;
   $('#syncChromeStatus').innerHTML = syncLine(sy.chrome, sy.chrome.enabled, t('sync.on'), t('sync.off'));
   const d = sy.drive;
   $('#driveConnect').hidden = !!d.connected && !d.error; // hata varken yeniden bağlanabilsin

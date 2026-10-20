@@ -24,9 +24,10 @@ trafiği o proxy üzerinden geçer; tek anahtarla kapatılır.
 
 | Tarayıcı | Bağlantı |
 | --- | --- |
-| Chrome, Brave, Opera, Vivaldi | **Chrome Web Store** — _yayın onayı bekleniyor_ <!-- CWS_LINK --> |
+| Chrome, Brave, Vivaldi | **Chrome Web Store** — _yayın onayı bekleniyor_ <!-- CWS_LINK --> |
 | Microsoft Edge | **Edge Add-ons** — _yayın onayı bekleniyor_ <!-- EDGE_LINK --> |
 | Firefox (masaüstü, 140+) | **Firefox Add-ons** — _yayın onayı bekleniyor_ <!-- AMO_LINK --> |
+| Opera | **Opera add-ons** — _yayın onayı bekleniyor_ <!-- OPERA_LINK --> |
 
 ### GitHub'dan (geliştirici modu)
 
@@ -206,9 +207,11 @@ paketlemek için gereken özel anahtar (`extension-key.pem`) depoda **yoktur**; 
 sürüm için henüz `vX.Y.Z` etiketi yoksa ayrıca:
 
 1. mağaza paketleri üretilir (`npm run build` → Chrome/Edge için `dist/proxyscout-<sürüm>.zip`, Firefox
-   için `dist/proxyscout-firefox-<sürüm>.zip`),
-2. GitHub Release oluşturulur ve iki paket eklenir,
-3. paketler **Chrome Web Store**, **Edge Add-ons** ve **Firefox Add-ons**'a yüklenip incelemeye gönderilir.
+   için `dist/proxyscout-firefox-<sürüm>.zip`, Opera için `dist/proxyscout-opera-<sürüm>.zip`),
+2. GitHub Release oluşturulur ve üç paket eklenir,
+3. paketler **Chrome Web Store**, **Edge Add-ons** ve **Firefox Add-ons**'a yüklenip incelemeye gönderilir,
+4. Opera paketinin bağlantısı ve yükleme adımlarıyla bir GitHub issue'su açılır: Opera add-ons'un yükleme
+   API'si yoktur, o sürüm elle yüklenir (birkaç dakika; aşağıya bakın).
 
 Bir düzeltmeyi yayınlamak için sürümü artırıp gönderin:
 
@@ -262,10 +265,24 @@ eklenir; anahtarı olmayan mağaza atlanır.
 3. Firefox eklenti kimliği pakette sabittir (`proxyscout@halil-kaplan.github.io`); değiştirmeyin, yoksa
    güncellemeler yeni bir eklenti sayılır.
 
+**Opera add-ons** (ücretsiz, API yok: yarı otomatik)
+
+1. <https://addons.opera.com/developer/> → **Upload package** → `dist/proxyscout-opera-<sürüm>.zip`
+   yüklenir (Chrome zip'i değil: Opera'nın denetleyicisi `__MSG_…__` kısa adını ve `.bin` dosyalarını
+   reddeder; bu pakette kısa ad düz metindir, ülke veritabanı `data/ipv4-country.json`'dadır).
+2. Mağaza bilgileri: 64×64 simge (`store/opera-icon-64.png`), dil başına en çok 3 ekran görüntüsü
+   (`store/screenshots/opera/en`, `…/tr`, 800×500). Her alan ancak yanındaki ✔ tıklanınca kaydedilir.
+   Sonra **General → Submit changes**.
+3. Paket için **otomatik moderasyonu** açın: otomatik kontrolleri geçen sürümler elle inceleme beklemeden
+   yayınlanır.
+4. Her yeni sürümde iş akışı paket bağlantısıyla bir issue açar ("Opera add-ons: vX.Y.Z …"):
+   **Versions → Upload new version** → zip'i yükleyin → alanları ✔ ile onaylayın → **Submit changes**,
+   sonra issue'yu kapatın. Bağlantıdaki paket numarası iş akışındaki `OPERA_PACKAGE_ID`'dir.
+
 **Mağaza kimlikleri ve Google girişi:** Mağazalar eklentiye kendi kimliğini verir. Google Drive
 senkronunun mağaza sürümlerinde çalışması için OAuth istemcisine (**Google Auth Platform → Clients →
 ProxyScout Extension**) iki yönlendirme adresi daha ekleyin: `https://<chrome-mağaza-kimliği>.chromiumapp.org/`
-ve `https://<edge-mağaza-kimliği>.chromiumapp.org/`. Firefox eklenti kimliğinden türeyen
+ve `https://<edge-mağaza-kimliği>.chromiumapp.org/` (Opera: `https://<opera-mağaza-kimliği>.chromiumapp.org/`). Firefox eklenti kimliğinden türeyen
 `https://<hash>.extensions.allizom.org/` adresini kullanır; tam adres Ayarlar → Senkronizasyon'da görünür.
 Mağazalar yayına girince "Kurulum" tablosundaki bağlantıları güncelleyin.
 
@@ -280,7 +297,8 @@ gerçek IP'yi sızdıramaz.
 
 ```
 npm test                 # birim testleri (node --test)
-npm run build            # dist/proxyscout-<sürüm>.zip, dist/proxyscout-firefox-<sürüm>.zip, dist/firefox/
+npm run build            # dist/proxyscout-<sürüm>.zip, dist/proxyscout-firefox-<sürüm>.zip,
+                         # dist/proxyscout-opera-<sürüm>.zip, dist/firefox/
 node tests/e2e.mjs <puppeteer klasörü> [ekran görüntüsü klasörü]
 node tests/e2e-firefox.mjs <selenium-webdriver klasörü> [ekran görüntüsü klasörü] [firefox.exe]
 ```

@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: release
@@ -69,6 +70,7 @@ jobs:
       new: ${{ steps.ver.outputs.new }}
       zip: ${{ steps.build.outputs.zip }}
       firefox_zip: ${{ steps.build.outputs.firefox_zip }}
+      opera_zip: ${{ steps.build.outputs.opera_zip }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -96,12 +98,13 @@ jobs:
           path: |
             ${{ steps.build.outputs.zip }}
             ${{ steps.build.outputs.firefox_zip }}
+            ${{ steps.build.outputs.opera_zip }}
       - name: GitHub Release
         if: steps.ver.outputs.new == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v${{ steps.ver.outputs.version }}" "${{ steps.build.outputs.zip }}" "${{ steps.build.outputs.firefox_zip }}" \
+          gh release create "v${{ steps.ver.outputs.version }}" "${{ steps.build.outputs.zip }}" "${{ steps.build.outputs.firefox_zip }}" "${{ steps.build.outputs.opera_zip }}" \
             --title "ProxyScout ${{ steps.ver.outputs.version }}" --generate-notes --target "${{ github.sha }}"
 
   chrome:
@@ -166,3 +169,30 @@ jobs:
           path: dist
       - name: Firefox Add-ons'a yükle
         run: node tools/publish.mjs firefox "${{ needs.release.outputs.firefox_zip }}"
+
+  # Opera add-ons'un yükleme API'si yok. Paket Release'e eklenir ve elle yükleme için bir hatırlatma (issue) açılır.
+  opera:
+    needs: release
+    if: needs.release.outputs.new == 'true'
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      VERSION: ${{ needs.release.outputs.version }}
+      ZIP: ${{ needs.release.outputs.opera_zip }}
+      OPERA_PACKAGE_ID: '307789'
+    steps:
+      - name: Opera için hatırlatma aç
+        run: |
+          NAME=$(basename "$ZIP")
+          URL="https://github.com/${{ github.repository }}/releases/download/v$VERSION/$NAME"
+          cat > body.md <<BODY
+          Opera add-ons'un otomatik yükleme API'si yok; bu sürümü panelden elle yükleyin (2-3 dakika).
+
+          1. Paketi indirin: [$NAME]($URL)
+          2. [Opera paneli → Versions](https://addons.opera.com/developer/package/$OPERA_PACKAGE_ID/?tab=versions) → **Upload new version** → zip'i seçin → **Upload add-on**.
+          3. Yeni sürümün sayfasında açıklama ve görselleri kontrol edin (önceki sürümden gelmediyse \`store/LISTING.md\` ve \`store/screenshots/opera/\`). Her alanı yanındaki ✔ ile onaylayın, sonra **General** sekmesinde **Submit changes**.
+
+          Opera'nın otomatik moderasyonu açık; paket kontrolü geçerse elle inceleme beklemeden yayınlanır. Yükleme bitince bu issue'yu kapatın.
+          BODY
+          sed -i 's/^          //' body.md
+          gh issue create --repo "${{ github.repository }}" --title "Opera add-ons: v$VERSION sürümünü yükle" --body-file body.md

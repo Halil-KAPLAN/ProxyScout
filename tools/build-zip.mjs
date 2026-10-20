@@ -1,6 +1,7 @@
 // Mağazalara yüklenecek paketleri üretir:
 //   dist/proxyscout-<sürüm>.zip          — Chrome Web Store ve Edge Add-ons (Manifest V3)
 //   dist/proxyscout-firefox-<sürüm>.zip  — Firefox Add-ons (Manifest V2, aynı kaynak dosyalar)
+//   dist/proxyscout-opera-<sürüm>.zip    — Opera add-ons (Chrome paketi; yalnızca short_name düz metin)
 //   dist/firefox/                        — Firefox paketinin açılmış hâli (about:debugging ve testler için)
 // Kullanım: node tools/build-zip.mjs
 // - manifest.json'daki "key" alanı çıkarılır (Chrome Web Store ve Edge bu alanı kabul etmez;
@@ -89,6 +90,11 @@ function zip(files) {
 // Firefox eklenti kimliği. Mağazadaki eklentiyi bu kimlik belirler; değiştirilirse güncellemeler yeni bir eklenti sayılır.
 export const GECKO_ID = 'proxyscout@halil-kaplan.github.io';
 
+export const OPERA_SHORT_NAME = 'ProxyScout';
+const GEO_BIN = 'data/ipv4-country.bin';
+const GEO_JSON = 'data/ipv4-country.json';
+export const operaManifest = (m) => ({ ...m, short_name: OPERA_SHORT_NAME });
+
 // MV3 manifestinden Firefox (MV2) manifesti üretir.
 export function firefoxManifest(m) {
   const permissions = m.permissions.filter((p) => p !== 'webRequestAuthProvider');
@@ -162,6 +168,18 @@ export function build() {
   const chromeFiles = src.filter((f) => f.name !== 'lib/firefox-shim.js').map((f) => (f.name === 'manifest.json' ? { name: f.name, data: json(manifest) } : f));
   const chromeZip = writeZip(`proxyscout-${manifest.version}.zip`, chromeFiles, 'Chrome/Edge');
 
+  // Opera'nın yükleme doğrulayıcısı (1) short_name'deki __MSG_…__ yer tutucusunu çözmeden uzunluğunu ölçüp reddeder,
+  // (2) izin listesinde olmayan .bin uzantısını kabul etmez. Opera paketinde kısa ad düz metindir ve ülke veritabanı
+  // base64 olarak data/ipv4-country.json'dadır (lib/geoip.js ikisini de okur). Geri kalan her şey Chrome paketiyle aynıdır.
+  const operaFiles = chromeFiles
+    .map((f) => {
+      if (f.name === 'manifest.json') return { name: f.name, data: json(operaManifest(manifest)) };
+      if (f.name === GEO_BIN) return { name: GEO_JSON, data: Buffer.from(JSON.stringify({ base64: f.data.toString('base64') })) };
+      return f;
+    })
+    .sort((a, b) => (a.name < b.name ? -1 : 1));
+  const operaZip = writeZip(`proxyscout-opera-${manifest.version}.zip`, operaFiles, 'Opera');
+
   const ffFiles = [
     ...src.map((f) => (f.name === 'manifest.json' ? { name: f.name, data: json(firefoxManifest(manifest)) } : { name: f.name, data: withShim(f.name, f.data) })),
     { name: 'background.html', data: Buffer.from(FIREFOX_BG_PAGE) },
@@ -176,9 +194,9 @@ export function build() {
 
   console.log(`sürüm ${manifest.version}`);
   if (process.env.GITHUB_OUTPUT) {
-    writeFileSync(process.env.GITHUB_OUTPUT, `zip=${chromeZip}\nfirefox_zip=${firefoxZip}\nversion=${manifest.version}\n`, { flag: 'a' });
+    writeFileSync(process.env.GITHUB_OUTPUT, `zip=${chromeZip}\nfirefox_zip=${firefoxZip}\nopera_zip=${operaZip}\nversion=${manifest.version}\n`, { flag: 'a' });
   }
-  return { chromeZip, firefoxZip, version: manifest.version };
+  return { chromeZip, firefoxZip, operaZip, version: manifest.version };
 }
 
 if (process.argv[1] && resolve(process.argv[1]).toLowerCase() === fileURLToPath(import.meta.url).toLowerCase()) build();

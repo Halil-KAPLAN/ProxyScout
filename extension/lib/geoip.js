@@ -35,10 +35,25 @@ export function parseGeo(buf) {
   return { lookup, date, size: n };
 }
 
+// Opera mağazası .bin uzantılı dosyaları kabul etmez; Opera paketinde aynı veri base64 olarak
+// data/ipv4-country.json içindedir ({ "base64": "…" }, tools/build-zip.mjs üretir).
+export function geoFromJson(j) {
+  const s = atob(j.base64);
+  const b = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) b[i] = s.charCodeAt(i);
+  return b.buffer;
+}
+
+async function geoBuffer() {
+  const bin = await fetch(chrome.runtime.getURL('data/ipv4-country.bin')).catch(() => null);
+  if (bin?.ok) return bin.arrayBuffer();
+  const json = await fetch(chrome.runtime.getURL('data/ipv4-country.json'));
+  return geoFromJson(await json.json());
+}
+
 let cached;
 export function loadGeo() {
-  cached ||= fetch(chrome.runtime.getURL('data/ipv4-country.bin'))
-    .then((r) => r.arrayBuffer())
+  cached ||= geoBuffer()
     .then(parseGeo)
     .catch(() => ({ lookup: () => null, date: '', size: 0 }));
   return cached;
