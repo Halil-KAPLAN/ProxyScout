@@ -3,7 +3,7 @@
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAl8YRnFcG1hldmvaRzgvzuFsXrVJMLTkhrVfgfl2S1YQ7YPyl9qTyYNhxHXlRwR35QTJS7rf1DtMp8qtxQykaGE832ItWbygnnQzT82Y0I/OCnD7uqkMCFSunezH5rDsB//QNpmU5kRUetgGY2UrbWA+Z4WLTqqziH7kWO3LrItnVZcseYmlf04akzVDULmRoyalDvYnb4bJrPCnZGsQ+VFRcC2HNHKI1eHJW9NIud/p5VgV3PSoJ6U8cW++UP7dIWe5TeuPlRm1bPYMUYcxnVBadE5ZfesGUWiQvnihga/Q2zlNhoRGd09VBRSOj/avtPoMxfKV9d6pY8rtge8dXkwIDAQAB",
   "name": "__MSG_extName__",
   "short_name": "__MSG_extShort__",
-  "version": "1.2.2",
+  "version": "1.2.3",
   "description": "__MSG_extDesc__",
   "default_locale": "en",
   "homepage_url": "https://github.com/Halil-KAPLAN/ProxyScout",
