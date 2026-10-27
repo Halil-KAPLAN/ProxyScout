@@ -12,9 +12,14 @@ export async function send(cmd, args = {}) {
 // Arka plandaki durumu canlı tutan depo. onChange({ full, changed, logs, sources }) çağrılır.
 export function createStore(onChange) {
   const st = { proxies: new Map(), settings: {}, sources: [], active: {}, connecting: null, job: null, realIp: null, logs: [], control: '', ready: false };
+  let port = null;
+  let lastSeen = 0;
   const connect = () => {
-    const port = chrome.runtime.connect({ name: 'ui' });
+    port = chrome.runtime.connect({ name: 'ui' });
+    lastSeen = Date.now();
     port.onMessage.addListener((msg) => {
+      lastSeen = Date.now();
+      if (msg.type === 'pong') return;
       if (msg.type === 'full') {
         const { proxies, ...rest } = msg.state;
         Object.assign(st, rest, { proxies: new Map(proxies.map((p) => [p.id, p])), ready: true });
@@ -35,6 +40,22 @@ export function createStore(onChange) {
     port.onDisconnect.addListener(() => setTimeout(connect, 500));
   };
   connect();
+  // Bağlantı bazen onDisconnect olmadan kopar (Edge for Android'de kurulumda açılan sayfa hiç güncelleme
+  // almadı). 10 sn'de bir yokla; 25 sn'dir yanıt yoksa yeniden bağlan ve tam durumu yeniden al.
+  setInterval(() => {
+    if (Date.now() - lastSeen > 25000) {
+      try {
+        port.disconnect();
+      } catch {}
+      connect();
+      return;
+    }
+    try {
+      port.postMessage({ type: 'ping' });
+    } catch {
+      connect();
+    }
+  }, 10000);
   return st;
 }
 

@@ -241,6 +241,8 @@ chrome.runtime.onConnect.addListener(async (port) => {
   if (port.name !== 'ui') return;
   ports.add(port);
   port.onDisconnect.addListener(() => ports.delete(port));
+  // Sayfa bağlantının canlı olduğunu yoklar (lib/ui.js createStore).
+  port.onMessage.addListener((msg) => msg?.type === 'ping' && port.postMessage({ type: 'pong' }));
   await ready;
   port.postMessage({ type: 'full', state: fullState() });
 });
