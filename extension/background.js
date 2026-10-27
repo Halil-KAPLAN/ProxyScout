@@ -1,6 +1,6 @@
 // ProxyScout arka plan servisi: liste indirme, proxy testi, proxy'ye bağlanma, otomatik geçiş.
 // Kayıtlar ve hatalar dil anahtarı olarak tutulur; arayüz bunları seçili dilde gösterir (lib/messages.js).
-import { IS_FIREFOX, HAS_BROWSER_SYNC, authRedirectUrl, credsSyncAllowed } from './lib/platform.js';
+import { IS_FIREFOX, HAS_BROWSER_SYNC, HAS_WEB_AUTH, authRedirectUrl, credsSyncAllowed } from './lib/platform.js';
 import { DEFAULT_SOURCES, enabledTypes } from './lib/sources.js';
 import { parseProxyList, parseManualList, proxyId } from './lib/parse.js';
 import { buildPac, findProxy, toProxyInfo, directiveFor, checkMarker, directMarker, httpsCheckHost } from './lib/pac.js';
@@ -848,7 +848,7 @@ const saveSyncState = () =>
 function syncView() {
   return {
     chrome: { ...S.sync.chrome, enabled: !!S.settings.syncChrome && HAS_BROWSER_SYNC, available: HAS_BROWSER_SYNC },
-    drive: { ...S.sync.drive, configured: !!driveClientId(), builtin: !!BUILTIN_CLIENT_ID },
+    drive: { ...S.sync.drive, configured: !!driveClientId(), builtin: !!BUILTIN_CLIENT_ID, available: HAS_WEB_AUTH },
     redirectUri: authRedirectUrl(),
     extensionId: chrome.runtime.id,
   };

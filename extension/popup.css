@@ -57,3 +57,9 @@ body { width: 380px; min-height: 480px; display: flex; flex-direction: column; }
 .item .m .warn { color: var(--warn); }
 #toggleWrap[data-state='wait'] input:checked + span { background: var(--warn); }
 #toggleWrap[data-state='bad'] input:checked + span { background: var(--err); }
+
+/* Firefox for Android: açılır pencere tam ekran sayfa olarak açılır (popup.js "mobile" sınıfını ekler). */
+.mobile body { width: auto; min-height: 100vh; }
+.mobile .list { max-height: none; }
+.mobile .item { padding: 11px 8px; }
+.mobile .tabs button { padding: 7px 9px; }

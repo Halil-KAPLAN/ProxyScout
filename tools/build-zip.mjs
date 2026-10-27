@@ -123,6 +123,8 @@ export function firefoxManifest(m) {
           optional: ['authenticationInfo'],
         },
       },
+      // Firefox for Android: data_collection_permissions 142'de geldi. Senkron Android'de yoktur (lib/platform.js).
+      gecko_android: { strict_min_version: '142.0' },
     },
   };
   return out;

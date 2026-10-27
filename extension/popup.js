@@ -1,6 +1,9 @@
 import { initLang, applyI18n, locale } from './lib/i18n.js';
 import { createStore, send, run, toast, t, CATEGORIES, errorText, anonText, phaseText, countryName, flag, latencyClass, addr, ago, esc, connectWithFeedback } from './lib/ui.js';
 import { icon } from './lib/icons.js';
+import { IS_ANDROID } from './lib/platform.js';
+
+if (IS_ANDROID) document.documentElement.classList.add('mobile');
 
 const langSetting = await initLang();
 applyI18n();
@@ -156,7 +159,8 @@ $('#auto').addEventListener('change', (e) => run('setAutoSwitch', { value: e.tar
 $('#dl').addEventListener('click', () => run('download', {}, t('toast.downloading')).catch(() => {}));
 $('#recheck').addEventListener('click', () => run('test', { filter: 'alive' }, t('toast.recheck')).catch(() => {}));
 $('#stop').addEventListener('click', () => run('stop'));
-$('#manager').addEventListener('click', () => chrome.runtime.openOptionsPage());
+// Android'de popup tam ekran bir sayfadır; yönetici arkasında açılır, bu yüzden popup kapatılır.
+$('#manager').addEventListener('click', () => chrome.runtime.openOptionsPage().then(() => IS_ANDROID && window.close()));
 $('#ipBtn').addEventListener('click', async () => {
   const out = $('#ipOut');
   out.hidden = false;

@@ -492,7 +492,7 @@ function renderHeader() {
       .join(' · ');
   } else {
     $('#connTitle').textContent = t('conn.direct');
-    $('#connSub').textContent = p ? t('conn.offLast', { addr: addr(p) }) : t('conn.offHint');
+    $('#connSub').textContent = p ? t('conn.offLast', { addr: addr(p) }) : t(matchMedia('(hover: none)').matches ? 'conn.offHintTouch' : 'conn.offHint');
   }
   const warn = store.control === 'controlled_by_other_extensions' ? `<div style="color:var(--err)">${esc(t('side.otherExt'))}</div>` : '';
   $('#sideInfo').innerHTML = `${warn}${esc(t('side.realIp'))}: <span class="mono">${store.realIp || '—'}</span><br>${esc(t('side.hint'))}`;
@@ -655,7 +655,13 @@ function renderSync() {
   const sy = store.sync;
   if (!sy) return;
   // Tarayıcı senkronu olmayan tarayıcılarda (Opera) seçenek gizlenir; Google Drive senkronu kalır.
+  // Firefox for Android'de ikisi de yoktur: bölümde yalnızca bir not görünür.
   const noBrowserSync = sy.chrome.available === false;
+  const noDrive = sy.drive.available === false;
+  for (const el of document.querySelectorAll('.sync-box .drive-part')) el.hidden = noDrive;
+  $('#syncDesc').hidden = noBrowserSync && noDrive;
+  $('#syncUnavailable').hidden = !(noBrowserSync && noDrive);
+  $('#syncActions').hidden = noBrowserSync && noDrive;
   $('#settingsForm').elements.syncChrome.closest('label').hidden = noBrowserSync;
   $('#syncChromeStatus').hidden = noBrowserSync;
   $('#syncChromeStatus').innerHTML = syncLine(sy.chrome, sy.chrome.enabled, t('sync.on'), t('sync.off'));

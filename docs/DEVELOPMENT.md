@@ -21,6 +21,21 @@ No build step for Chromium browsers: open `chrome://extensions` (Edge: `edge://e
 **Load Temporary Add-on…** → `dist/firefox/manifest.json`. Temporary add-ons are removed when Firefox
 closes.
 
+**Firefox for Android (142+):** the Firefox package also targets Android (`gecko_android` in the
+generated manifest). Sync is not available there (`storage.sync` does not sync on Android and there is
+no `identity` API), so Settings → Sync shows a note instead; the manager and popup switch to a
+narrow-screen layout. To test on a phone:
+
+1. Phone: **Settings → About phone** → tap **Build number** 7 times → **Developer options** →
+   **USB debugging** on. In Firefox: **Settings → Remote debugging via USB** on.
+2. Computer: install adb (`winget install Google.PlatformTools`), connect the phone by USB, run
+   `adb devices` and accept the prompt on the phone.
+3. `npm run build`, then
+   `npx web-ext run -t firefox-android --android-device <device id> --firefox-apk org.mozilla.firefox -s dist/firefox`.
+   The add-on is installed temporarily and Firefox opens on the phone.
+4. Console and errors: desktop Firefox → `about:debugging` → **Setup** → enable USB devices → the phone →
+   ProxyScout → **Inspect**. `npx web-ext lint -s dist/firefox` lists Android-incompatible APIs.
+
 ## Tests
 
 ```

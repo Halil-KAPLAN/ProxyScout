@@ -6,9 +6,16 @@
 // browser.runtime.getBrowserInfo kullanılır.
 export const IS_FIREFOX = typeof browser !== 'undefined' && typeof browser.runtime?.getBrowserInfo === 'function';
 
+// Mobil tarayıcı (Firefox for Android). Arayüz dar ekran düzenine geçer.
+export const IS_ANDROID = /\bAndroid\b/.test(navigator.userAgent);
+
 // Opera, Chromium tabanlı olsa da bazı API'leri sunmaz (help.opera.com/en/extensions/apis): storage.sync yoktur,
 // identity'de yalnızca launchWebAuthFlow vardır. Bu yüzden ikisi de varlık kontrolüyle kullanılır.
-export const HAS_BROWSER_SYNC = !!chrome.storage?.sync;
+// Firefox for Android'de storage.sync vardır ama Mozilla hesabıyla eşitlenmez; senkron seçeneği gösterilmez.
+export const HAS_BROWSER_SYNC = !!chrome.storage?.sync && !(IS_FIREFOX && IS_ANDROID);
+
+// Google Drive girişi identity.launchWebAuthFlow ister; Firefox for Android'de bu API yoktur.
+export const HAS_WEB_AUTH = typeof chrome.identity?.launchWebAuthFlow === 'function';
 
 // identity.getRedirectURL yoksa Chromium'un aynı adresi (https://<eklenti kimliği>.chromiumapp.org/) kullanılır.
 export const authRedirectUrl = () => chrome.identity?.getRedirectURL?.() || `https://${chrome.runtime.id}.chromiumapp.org/`;

@@ -179,20 +179,21 @@
           </fieldset>
           <fieldset class="sync-box">
             <legend data-i18n="set.sync"></legend>
-            <p class="wide muted" data-i18n="set.syncDesc"></p>
+            <p class="wide muted" id="syncDesc" data-i18n="set.syncDesc"></p>
+            <p class="wide muted" id="syncUnavailable" data-i18n="sync.unavailable" hidden></p>
             <label class="check"><span class="switch"><input type="checkbox" name="syncChrome" /><span></span></span> <span data-i18n="set.syncChrome"></span></label>
             <div class="wide sync-status" id="syncChromeStatus"></div>
-            <div class="wide sync-sep"></div>
-            <div class="wide"><b data-i18n="set.drive"></b></div>
-            <div class="wide drive-row">
+            <div class="wide sync-sep drive-part"></div>
+            <div class="wide drive-part"><b data-i18n="set.drive"></b></div>
+            <div class="wide drive-row drive-part">
               <button type="button" class="btn google-btn" id="driveConnect"></button>
               <div class="drive-account" id="driveAccount" hidden></div>
               <button type="button" class="btn sm danger" id="driveDisconnect" data-i18n="sync.disconnect"></button>
             </div>
-            <div class="wide sync-status" id="syncDriveStatus"></div>
+            <div class="wide sync-status drive-part" id="syncDriveStatus"></div>
             <div class="wide sync-status warn" id="syncCredsNote" hidden></div>
-            <div class="wide sync-actions"><button type="button" class="btn" id="syncNow"></button></div>
-            <details class="wide adv" id="driveAdvanced">
+            <div class="wide sync-actions" id="syncActions"><button type="button" class="btn" id="syncNow"></button></div>
+            <details class="wide adv drive-part" id="driveAdvanced">
               <summary data-i18n="set.advanced"></summary>
               <label><span data-i18n="set.driveClientId"></span>
                 <input class="input mono" name="driveClientId" placeholder="1234567890-abc.apps.googleusercontent.com" />
