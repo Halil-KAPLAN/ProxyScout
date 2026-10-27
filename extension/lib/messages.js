@@ -137,7 +137,6 @@ const tr = {
   'side.realIp': 'Gerçek IP',
   'side.hint': 'Çift tık: bağlan · Del: sil · Ctrl+A: tümünü seç',
   'side.otherExt': '⚠ Proxy ayarları başka bir eklentinin kontrolünde.',
-  'side.lang': 'Dil',
 
   // Araç çubuğu
   'tb.download': 'Listeleri indir ve test et',
@@ -248,6 +247,7 @@ const tr = {
   // Ayarlar
   'set.title': 'Ayarlar',
   'set.desc': 'Dil, test ve bağlantı davranışı.',
+  'set.version': 'Sürüm {v}',
   'set.general': 'Genel',
   'set.lang': 'Dil',
   'set.langAuto': 'Otomatik (sistem dili)',
@@ -466,7 +466,6 @@ const en = {
   'side.realIp': 'Real IP',
   'side.hint': 'Double-click: connect · Del: delete · Ctrl+A: select all',
   'side.otherExt': '⚠ Proxy settings are controlled by another extension.',
-  'side.lang': 'Language',
 
   'tb.download': 'Download & test lists',
   'tb.test': 'Test',
@@ -572,6 +571,7 @@ const en = {
 
   'set.title': 'Settings',
   'set.desc': 'Language, testing and connection behavior.',
+  'set.version': 'Version {v}',
   'set.general': 'General',
   'set.lang': 'Language',
   'set.langAuto': 'Automatic (system language)',

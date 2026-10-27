@@ -201,8 +201,6 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .row.connecting { background: var(--warn-soft); }
 .row .connect-btn.busy { visibility: visible; color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, var(--line-2)); opacity: 1; }
 .row .city { color: var(--muted); }
-.lang-pick { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
-.lang-pick select { height: 28px; flex: 1; min-width: 0; font-size: 12px; }
 
 /* Üst çubuktaki "Kes" ve tablo başlığındaki "Yeniden sırala" */
 .thead .act { text-align: right; text-transform: none; letter-spacing: 0; }
@@ -239,8 +237,21 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .adv[open] summary { margin-bottom: 10px; }
 .adv label { display: flex; flex-direction: column; gap: 5px; color: var(--muted); font-size: 12.5px; margin-bottom: 10px; }
 
+/* Yalnızca dar ekranda görünen öğeler (çark düğmesi, Ayarlar/Kaynaklar sekmeleri). */
+.m-only, .m-tabs { display: none; }
+.app-version { margin-top: 4px; font: 12px var(--mono); }
+
 /* Dar ekran (Firefox for Android, dar pencere): kategoriler üstte yatay kayar, tabloda temel sütunlar kalır. */
 @media (max-width: 760px) {
+  .m-only { display: inline-flex; }
+  #btnMobileSettings { order: 1; margin-left: auto; width: 40px; height: 40px; padding: 0; justify-content: center; }
+  #btnMobileSettings svg { width: 20px; height: 20px; }
+  body[data-view='settings'] #btnMobileSettings, body[data-view='sources'] #btnMobileSettings { background: var(--blue-soft); color: var(--accent-2); }
+  .top-right { order: 2; flex: 1 1 100%; justify-content: flex-end; margin-left: 0; }
+  .side-settings { display: none; }
+  body[data-view='settings'] .m-tabs, body[data-view='sources'] .m-tabs { display: flex; gap: 6px; padding: 10px 12px 0; }
+  .m-tabs button { flex: 1; height: 38px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg-2); color: var(--muted); font: 600 13px var(--sans); cursor: pointer; }
+  .m-tabs button.on { background: var(--blue-soft); color: var(--text); border-color: color-mix(in srgb, var(--accent-2) 50%, var(--line)); }
   .top { flex-wrap: wrap; gap: 8px 12px; padding: 8px 12px; min-height: 0; }
   .brand { min-width: 0; }
   .brand small { display: none; }

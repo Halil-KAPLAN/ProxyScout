@@ -63,6 +63,20 @@ test('kaynaklar: site başına tek kaynak, türler seçilebilir', () => {
   for (const s of DEFAULT_SOURCES) assert.ok(sourceTypes(s).length, s.id);
 });
 
+test('ilk kurulumda yalnızca en iyi üç kaynak açık (~500 proxy)', () => {
+  assert.deepEqual(DEFAULT_SOURCES.filter((s) => s.enabled).map((s) => s.id), ['fpl', 'sslproxies', 'roosterkid']);
+  assert.ok(DEFAULT_SOURCES.length >= 20, 'diğer kaynaklar listede kalır, kullanıcı açabilir');
+});
+
+test('dar ekran: Ayarlar ve Kaynaklar çark düğmesinden açılır, sürüm Ayarlar\'da görünür', () => {
+  const html = read('manager.html');
+  for (const id of ['btnMobileSettings', 'mTabs', 'appVersion']) assert.ok(html.includes(`id="${id}"`), id);
+  assert.match(html, /data-mview="settings"/);
+  assert.match(html, /data-mview="sources"/);
+  const css = read('manager.css');
+  assert.match(css, /\.side-settings \{ display: none; \}/);
+});
+
 test('manifest yerelleştirmesi', () => {
   const m = JSON.parse(read('manifest.json'));
   for (const l of ['en', 'tr']) {

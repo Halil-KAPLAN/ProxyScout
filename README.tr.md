@@ -34,7 +34,8 @@ sayfasında **Geliştirici modu**nu açın ve **Paketlenmemiş öğe yükle** �
 ## Özellikler
 
 - **21 hazır liste kaynağı** (ProxyScrape, free-proxy-list.net, Spys.me, monosans, TheSpeedX…), kaynak
-  başına **HTTP / SOCKS4 / SOCKS5** seçimi, kendi liste adresleriniz.
+  başına **HTTP / SOCKS4 / SOCKS5** seçimi, kendi liste adresleriniz. Varsayılan olarak yalnızca en
+  güvenilir kaynaklar açıktır (yaklaşık 500 proxy); daha fazlasını **Kaynaklar**'dan açabilirsiniz.
 - **Gerçek test:** her proxy önce HTTP, sonra iki ayrı HTTPS bağlantısıyla test edilir. Küçük bir test
   sayfasını açıp gerçek siteleri açamayan proxy'ler elenir.
 - **Çakışmayan gizlilik grupları** — her çalışan proxy tam olarak bir gruptadır:
@@ -63,7 +64,7 @@ sayfasında **Geliştirici modu**nu açın ve **Paketlenmemiş öğe yükle** �
 | Proxy'yi kapat | Popup'ın üstündeki ya da yöneticideki bağlantı kartındaki anahtar |
 | Yeniden test et, temizle | **Test et ▾** (seçilenler, yeniler, çalışanlar, ölüler…) ve **Sil ▾** (ölüler) |
 | Kendi proxy'lerinizi ekleyin | **İçe aktar** (`ip:port`, `socks5://ip:port`, `kullanıcı:şifre@ip:port`, `ip:port:kullanıcı:şifre`) |
-| Kaynak seçin ya da ekleyin | Sol menü → **Kaynaklar** |
+| Kaynak seçin ya da ekleyin | Sol menü → **Kaynaklar** (telefonda: üstteki ⚙ → **Kaynaklar**) |
 
 Kısayollar (yönetici): `Enter` = seçiliye bağlan, `Del` = sil, `Ctrl+A` = tümünü seç,
 `Shift/Ctrl+tık` = çoklu seçim.

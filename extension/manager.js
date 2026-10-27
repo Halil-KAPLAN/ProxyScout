@@ -73,13 +73,14 @@ const navSources = document.querySelector('[data-view=sources]');
 const navSettings = document.querySelector('[data-view=settings]');
 navSources.innerHTML = icon('source') + `<span>${t('nav.sources')}</span><span class="n" id="nSources"></span>`;
 navSettings.innerHTML = icon('gear') + `<span>${t('nav.settings')}</span>`;
+$('#btnMobileSettings').innerHTML = icon('gear');
+$('#appVersion').textContent = t('set.version', { v: chrome.runtime.getManifest().version });
 
 const LANG_OPTIONS = () => [['auto', t('set.langAuto')], ['tr', 'Türkçe'], ['en', 'English']];
-for (const sel of [$('#langSelect'), $('#langQuick')]) {
-  sel.innerHTML = LANG_OPTIONS().map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join('');
-  sel.value = langSetting;
-}
-$('#langQuick').addEventListener('change', async (e) => {
+$('#langSelect').innerHTML = LANG_OPTIONS().map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join('');
+$('#langSelect').value = langSetting;
+// Dil seçimi Ayarlar'da; değiştirilince Kaydet beklemeden uygulanır.
+$('#langSelect').addEventListener('change', async (e) => {
   await run('saveSettings', { settings: { lang: e.target.value } });
   location.reload();
 });
@@ -201,9 +202,19 @@ $('.side').addEventListener('click', (e) => {
 
 function showView(v) {
   ui.view = v;
+  document.body.dataset.view = v;
   for (const s of document.querySelectorAll('.view')) s.hidden = s.id !== 'view-' + v;
+  for (const b of document.querySelectorAll('#mTabs [data-mview]')) b.classList.toggle('on', b.dataset.mview === v);
   dataChanged();
 }
+
+// Dar ekran: çark Ayarlar'ı açar (ayarlardayken listeye döner); üstteki sekmeler Ayarlar ile Kaynaklar arasında geçer.
+const inSettings = () => ui.view === 'settings' || ui.view === 'sources';
+$('#btnMobileSettings').addEventListener('click', () => showView(inSettings() ? 'list' : 'settings'));
+$('#mTabs').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-mview]');
+  if (b) showView(b.dataset.mview);
+});
 
 let lastCountryKey = null;
 function renderCountries() {

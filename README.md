@@ -35,7 +35,8 @@ traffic goes through it; one switch turns it off again.
 ## Features
 
 - **21 built-in list sources** (ProxyScrape, free-proxy-list.net, Spys.me, monosans, TheSpeedX, …),
-  **HTTP / SOCKS4 / SOCKS5** per source, plus your own list URLs.
+  **HTTP / SOCKS4 / SOCKS5** per source, plus your own list URLs. Only the most reliable ones are on by
+  default (about 500 proxies); turn on more under **Sources**.
 - **Real tests:** every proxy is tested over HTTP, then with two separate HTTPS connections. Proxies
   that load a tiny test page but fail on real websites are filtered out.
 - **Anonymity groups that never overlap** — every working proxy is in exactly one:
@@ -63,7 +64,7 @@ traffic goes through it; one switch turns it off again.
 | Turn the proxy off | The switch at the top of the popup or in the manager's connection card |
 | Re-test or clean up | **Test ▾** (selected, new, working, dead, …) and **Delete ▾** (dead proxies) |
 | Add your own proxies | **Import** (`ip:port`, `socks5://ip:port`, `user:pass@ip:port`, `ip:port:user:pass`) |
-| Choose or add sources | Sidebar → **Sources** |
+| Choose or add sources | Sidebar → **Sources** (on a phone: ⚙ at the top → **Sources**) |
 
 Manager shortcuts: `Enter` = connect to selected, `Del` = delete, `Ctrl+A` = select all,
 `Shift/Ctrl+click` = multi-select.

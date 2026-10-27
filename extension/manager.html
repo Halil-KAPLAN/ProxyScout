@@ -15,6 +15,8 @@
       <img src="icons/brand48.png" alt="" />
       <div><b>ProxyScout</b><small data-i18n="brand.sub"></small></div>
     </div>
+    <!-- Yalnızca dar ekranda: Ayarlar ve Kaynaklar buradan açılır (yan menüdeki bağlantılar gizlenir). -->
+    <button type="button" class="btn m-only" id="btnMobileSettings" data-i18n-title="nav.settings"></button>
 
     <div class="conn" id="conn">
       <span class="dot"></span>
@@ -40,21 +42,21 @@
   <div class="layout">
     <aside class="side">
       <nav id="cats" class="cats"></nav>
-      <div class="side-sep"></div>
-      <nav class="cats">
+      <div class="side-sep side-settings"></div>
+      <nav class="cats side-settings">
         <a href="#" data-view="sources" class="cat"></a>
         <a href="#" data-view="settings" class="cat"></a>
       </nav>
       <div class="side-foot">
         <div id="sideInfo"></div>
-        <label class="lang-pick">
-          <span data-i18n="side.lang"></span>
-          <select class="input" id="langQuick"></select>
-        </label>
       </div>
     </aside>
 
     <main>
+      <nav class="m-tabs" id="mTabs">
+        <button type="button" data-mview="settings" data-i18n="nav.settings"></button>
+        <button type="button" data-mview="sources" data-i18n="nav.sources"></button>
+      </nav>
       <!-- Proxy listesi -->
       <section class="view" id="view-list">
         <div class="toolbar">
@@ -145,6 +147,7 @@
           <div>
             <h2 data-i18n="set.title"></h2>
             <p class="muted" data-i18n="set.desc"></p>
+            <p class="muted app-version" id="appVersion"></p>
           </div>
         </div>
         <form class="settings" id="settingsForm">

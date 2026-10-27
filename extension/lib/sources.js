@@ -1,7 +1,9 @@
 // Varsayılan proxy listesi kaynakları. Her site tek bir kaynaktır; sitenin sunduğu
 // türler (HTTP / SOCKS4 / SOCKS5) "feeds" altında listelenir ve arayüzde onay kutusuyla seçilir.
 // feed türü "auto" ise satırdaki önek/sütun türü belirler ve sonuç seçili türlere göre süzülür.
-// Çok büyük listeler (10 bin+) varsayılan olarak kapalı; Kaynaklar ekranından açılabilir.
+// İlk kurulumda yalnızca en kaliteli birkaç kaynak açıktır (toplam ~500 proxy; çalışma oranı en yüksek olanlar,
+// ölçüm 2026-10: free-proxy-list.net %41, roosterkid %11). Diğerleri Kaynaklar ekranından açılabilir.
+// Var olan kurulumlarda kullanıcının seçimi korunur (background.js mergeSources).
 
 const PS = 'https://api.proxyscrape.com/v4/free-proxy-list/get?request=display_proxies&proxy_format=ipport&format=text&protocol=';
 const GH = 'https://raw.githubusercontent.com/';
@@ -10,14 +12,15 @@ const src = (id, name, feeds, opts = {}) => ({
   id,
   name,
   feeds: feeds.map(([type, url]) => ({ type, url })),
-  enabled: opts.enabled ?? true,
+  enabled: opts.enabled ?? false,
+  ...(opts.types ? { types: opts.types } : {}),
   ...(opts.autoTypes ? { autoTypes: opts.autoTypes } : {}),
 });
 
 export const DEFAULT_SOURCES = [
   src('proxyscrape', 'ProxyScrape', [['http', PS + 'http'], ['socks4', PS + 'socks4'], ['socks5', PS + 'socks5']]),
-  src('fpl', 'free-proxy-list.net', [['http', 'https://free-proxy-list.net/'], ['http', 'https://free-proxy-list.net/anonymous-proxy.html']]),
-  src('sslproxies', 'sslproxies.org', [['http', 'https://www.sslproxies.org/']]),
+  src('fpl', 'free-proxy-list.net', [['http', 'https://free-proxy-list.net/'], ['http', 'https://free-proxy-list.net/anonymous-proxy.html']], { enabled: true }),
+  src('sslproxies', 'sslproxies.org', [['http', 'https://www.sslproxies.org/']], { enabled: true }),
   src('usproxy', 'us-proxy.org', [['http', 'https://www.us-proxy.org/']]),
   src('socksproxynet', 'socks-proxy.net', [['auto', 'https://www.socks-proxy.net/']], { autoTypes: ['socks4', 'socks5'] }),
   src('spys', 'Spys.me', [['http', 'https://spys.me/proxy.txt'], ['socks5', 'https://spys.me/socks.txt']]),
@@ -45,41 +48,41 @@ export const DEFAULT_SOURCES = [
     ['http', GH + 'roosterkid/openproxylist/main/HTTPS_RAW.txt'],
     ['socks4', GH + 'roosterkid/openproxylist/main/SOCKS4_RAW.txt'],
     ['socks5', GH + 'roosterkid/openproxylist/main/SOCKS5_RAW.txt'],
-  ]),
+  ], { enabled: true, types: ['http', 'socks5'] }), // SOCKS4 (~150) varsayılan dışı: toplam ~400-500 kalsın
   src('mmpx12', 'mmpx12/proxy-list', [
     ['http', GH + 'mmpx12/proxy-list/master/http.txt'],
     ['socks4', GH + 'mmpx12/proxy-list/master/socks4.txt'],
     ['socks5', GH + 'mmpx12/proxy-list/master/socks5.txt'],
   ]),
   src('clarketm', 'clarketm/proxy-list', [['http', GH + 'clarketm/proxy-list/master/proxy-list-raw.txt']]),
-  src('proxyspace', 'proxyspace.pro', [['http', 'https://proxyspace.pro/http.txt'], ['socks4', 'https://proxyspace.pro/socks4.txt'], ['socks5', 'https://proxyspace.pro/socks5.txt']], { enabled: false }),
+  src('proxyspace', 'proxyspace.pro', [['http', 'https://proxyspace.pro/http.txt'], ['socks4', 'https://proxyspace.pro/socks4.txt'], ['socks5', 'https://proxyspace.pro/socks5.txt']]),
   src('speedx', 'TheSpeedX/PROXY-List', [
     ['http', GH + 'TheSpeedX/PROXY-List/master/http.txt'],
     ['socks4', GH + 'TheSpeedX/PROXY-List/master/socks4.txt'],
     ['socks5', GH + 'TheSpeedX/PROXY-List/master/socks5.txt'],
-  ], { enabled: false }),
+  ]),
   src('dpangestuw', 'dpangestuw/Free-Proxy', [
     ['http', GH + 'dpangestuw/Free-Proxy/main/http_proxies.txt'],
     ['socks4', GH + 'dpangestuw/Free-Proxy/main/socks4_proxies.txt'],
     ['socks5', GH + 'dpangestuw/Free-Proxy/main/socks5_proxies.txt'],
-  ], { enabled: false }),
+  ]),
   src('openproxylist', 'openproxylist.xyz', [
     ['http', 'https://api.openproxylist.xyz/http.txt'],
     ['socks4', 'https://api.openproxylist.xyz/socks4.txt'],
     ['socks5', 'https://api.openproxylist.xyz/socks5.txt'],
-  ], { enabled: false }),
-  src('sunny9577', 'sunny9577/proxy-scraper', [['http', GH + 'sunny9577/proxy-scraper/master/proxies.txt']], { enabled: false }),
+  ]),
+  src('sunny9577', 'sunny9577/proxy-scraper', [['http', GH + 'sunny9577/proxy-scraper/master/proxies.txt']]),
   src('proxifly', 'proxifly (çok büyük / very large)', [
     ['http', GH + 'proxifly/free-proxy-list/main/proxies/protocols/http/data.txt'],
     ['socks4', GH + 'proxifly/free-proxy-list/main/proxies/protocols/socks4/data.txt'],
     ['socks5', GH + 'proxifly/free-proxy-list/main/proxies/protocols/socks5/data.txt'],
-  ], { enabled: false }),
-  src('hookzof', 'hookzof/socks5_list (çok büyük / very large)', [['socks5', GH + 'hookzof/socks5_list/master/proxy.txt']], { enabled: false }),
+  ]),
+  src('hookzof', 'hookzof/socks5_list (çok büyük / very large)', [['socks5', GH + 'hookzof/socks5_list/master/proxy.txt']]),
   src('murongpig', 'MuRongPIG/Proxy-Master (çok büyük / very large)', [
     ['http', GH + 'MuRongPIG/Proxy-Master/main/http.txt'],
     ['socks4', GH + 'MuRongPIG/Proxy-Master/main/socks4.txt'],
     ['socks5', GH + 'MuRongPIG/Proxy-Master/main/socks5.txt'],
-  ], { enabled: false }),
+  ]),
 ];
 
 export const ALL_TYPES = ['http', 'socks4', 'socks5'];
