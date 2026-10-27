@@ -22,9 +22,9 @@ traffic goes through it; one switch turns it off again.
 
 | Browser | Store |
 | --- | --- |
-| Chrome, Brave, Vivaldi | **Chrome Web Store** — _awaiting review_ <!-- CWS_LINK --> |
-| Microsoft Edge | **Edge Add-ons** — _awaiting review_ <!-- EDGE_LINK --> |
-| Firefox (desktop, 140+) | **Firefox Add-ons** — _awaiting review_ <!-- AMO_LINK --> |
+| Chrome, Brave, Vivaldi | [![Chrome Web Store](https://img.shields.io/badge/Chrome_Web_Store-4285F4?style=for-the-badge&logo=googlechrome&logoColor=white)](https://chromewebstore.google.com/detail/dldogmkmofnbapihicpkholeldcipmik) |
+| Microsoft Edge | [![Microsoft Edge Add-ons](https://img.shields.io/badge/Edge_Add--ons-0078D7?style=for-the-badge&logo=data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8%2F9hAAAAYElEQVR4nO3MsQ2AIBBG4X8TwkJixzLiFpdcL0MAQxlE%2BzMWdlxPQfF1Lw%2FXakXTnKVQQHuGaDAHIwxuZ0jBz2L8VuBDBocM6gFiJQUjNi8JH5YE6gGOU3T1D0UzByMMXqt1XbOLLoZFAAAAAElFTkSuQmCC)](https://microsoftedge.microsoft.com/addons/detail/fmgnnkkdafjkkdfbohbgcgpblondogon) |
+| Firefox (desktop, 140+) | [![Firefox Add-ons](https://img.shields.io/badge/Firefox_Add--ons-FF7139?style=for-the-badge&logo=firefoxbrowser&logoColor=white)](https://addons.mozilla.org/firefox/addon/proxyscout/) |
 | Opera | **Opera add-ons** — _awaiting review_ <!-- OPERA_LINK --> |
 
 **Without a store (Chromium browsers):** download `proxyscout-x.y.z.zip` from the
