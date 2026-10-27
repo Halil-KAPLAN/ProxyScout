@@ -11,13 +11,6 @@ Brave and Vivaldi). ProxyScout downloads free proxy lists from dozens of sources
 proxy over HTTP and HTTPS, and sorts the working ones by anonymity. Click a proxy and all browser
 traffic goes through it; one switch turns it off again.
 
-![Working proxies, tested and sorted](store/screenshots/en/01-list.png)
-
-| | |
-| --- | --- |
-| ![One-click connect from the popup](store/screenshots/en/02-popup.png) | ![Sorted by anonymity level](store/screenshots/en/03-cats.png) |
-| ![Choose sources and proxy types](store/screenshots/en/04-sources.png) | ![Sync across browsers](store/screenshots/en/05-sync.png) |
-
 ## Install
 
 | Browser | Store |
@@ -31,6 +24,13 @@ traffic goes through it; one switch turns it off again.
 [latest release](https://github.com/Halil-KAPLAN/ProxyScout/releases/latest) and extract it, open
 `chrome://extensions` (Edge: `edge://extensions`), turn on **Developer mode** and choose
 **Load unpacked** → the extracted folder.
+
+![Working proxies, tested and sorted](store/screenshots/en/01-list.png)
+
+| | |
+| --- | --- |
+| ![One-click connect from the popup](store/screenshots/en/02-popup.png) | ![Sorted by anonymity level](store/screenshots/en/03-cats.png) |
+| ![Choose sources and proxy types](store/screenshots/en/04-sources.png) | ![Sync across browsers](store/screenshots/en/05-sync.png) |
 
 ## Features
 

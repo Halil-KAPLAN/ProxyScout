@@ -11,13 +11,6 @@ değiştirici. ProxyScout ücretsiz proxy listelerini onlarca kaynaktan indirir,
 üzerinden gerçekten test eder ve çalışanları gizlilik düzeyine göre ayırır. Bir proxy'ye tıklayınca tüm
 tarayıcı trafiği o proxy üzerinden geçer; tek anahtarla kapatılır.
 
-![Çalışan proxy'ler, test edilmiş ve ayrılmış](store/screenshots/tr/01-list.png)
-
-| | |
-| --- | --- |
-| ![Popup'tan tek tıkla bağlanma](store/screenshots/tr/02-popup.png) | ![Gizlilik düzeyine göre kategoriler](store/screenshots/tr/03-cats.png) |
-| ![Kaynak ve tür seçimi](store/screenshots/tr/04-sources.png) | ![Tarayıcılar arası senkron](store/screenshots/tr/05-sync.png) |
-
 ## Kurulum
 
 | Tarayıcı | Mağaza |
@@ -30,6 +23,13 @@ tarayıcı trafiği o proxy üzerinden geçer; tek anahtarla kapatılır.
 **Mağazasız (Chromium tarayıcılar):** [son sürümün](https://github.com/Halil-KAPLAN/ProxyScout/releases/latest)
 `proxyscout-x.y.z.zip` dosyasını indirip açın, `chrome://extensions` (Edge'de `edge://extensions`)
 sayfasında **Geliştirici modu**nu açın ve **Paketlenmemiş öğe yükle** → açtığınız klasörü seçin.
+
+![Çalışan proxy'ler, test edilmiş ve ayrılmış](store/screenshots/tr/01-list.png)
+
+| | |
+| --- | --- |
+| ![Popup'tan tek tıkla bağlanma](store/screenshots/tr/02-popup.png) | ![Gizlilik düzeyine göre kategoriler](store/screenshots/tr/03-cats.png) |
+| ![Kaynak ve tür seçimi](store/screenshots/tr/04-sources.png) | ![Tarayıcılar arası senkron](store/screenshots/tr/05-sync.png) |
 
 ## Özellikler
 
