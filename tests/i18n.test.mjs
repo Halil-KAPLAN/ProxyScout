@@ -77,6 +77,15 @@ test('dar ekran: Ayarlar ve Kaynaklar çark düğmesinden açılır, sürüm Aya
   assert.match(css, /\.side-settings \{ display: none; \}/);
 });
 
+test('Kaynaklar sayfası: indirme sürerken Durdur düğmesi ve HTTPS açıklaması', () => {
+  const html = read('manager.html');
+  assert.ok(html.includes('id="srcStop"'));
+  assert.ok(html.includes('data-i18n="src.httpsNote"'));
+  const js = read('manager.js');
+  assert.match(js, /\$\('#srcStop'\)\.addEventListener\('click', \(\) => run\('stop'\)\)/);
+  assert.match(js, /\$\('#srcStop'\)\.hidden = !j;/);
+});
+
 test('manifest yerelleştirmesi', () => {
   const m = JSON.parse(read('manifest.json'));
   for (const l of ['en', 'tr']) {
