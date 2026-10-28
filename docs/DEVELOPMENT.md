@@ -83,11 +83,15 @@ behind a random per-install token, and the PAC script routes only that request t
 1. **HTTP test** – `http://httpbin.org/get` is requested through the proxy. The returned IP and headers
    give whether it works, its anonymity level and its latency. Proxies that modify content are rejected.
 2. **HTTPS test** – every proxy that passed (SOCKS included) opens **two separate** HTTPS connections to
-   Cloudflare; both must return the proxy's exit IP. The test host
-   (`pxs…-<type>-<ip>-<port>-….cloudflareaccess.com`) carries the proxy in its name, so all proxies are
-   tested at once without changing the PAC script. `tests/bench.mjs`: real websites (Wikipedia, GitHub,
-   Bing) opened **83%** of the time through proxies that passed, **7%** through those that failed. The
-   chosen proxy is verified again over HTTPS on connect.
+   Cloudflare; both must return the proxy's exit IP. Then it must carry a page load: the first 256 KB of a
+   large cached file on the same host must arrive within the HTTPS timeout (otherwise "too slow"). The test
+   host (`pxs…-<type>-<ip>-<port>-….cloudflareaccess.com`) carries the proxy in its name, so all proxies are
+   tested at once without changing the PAC script.
+   On connect, the proxy is verified again: the exit IP is read (ipify / icanhazip) **and** a real site
+   (Wikipedia) must open; some proxies only allow a few addresses.
+   Measured on 2026-10-29 (Firefox and Chrome, Wikipedia + GitHub opened in the browser): of the proxies
+   ProxyScout reported as connected, 71% opened both sites (39% before the load test and the site check).
+   HTTP-only proxies (no HTTPS) opened none.
 3. **Location** – country from the bundled DB-IP Lite database (`lib/geoip.js`, refreshed with
    `node tools/build-geo.mjs`); city and ISP of working proxies from ip-api.com (15 batch requests per
    minute on the free tier). Windows cannot draw flag emojis, so a small flag font is bundled.

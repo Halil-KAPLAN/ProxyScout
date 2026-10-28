@@ -58,6 +58,7 @@ const tr = {
 
   // Proxy hata kodları
   'err.timeout': 'Zaman aşımı',
+  'err.slow': 'Çok yavaş (sayfa yükünü taşıyamadı)',
   'err.connect': 'Bağlantı kurulamadı',
   'err.cancelled': 'İptal edildi',
   'err.redirect': 'Yönlendirme yaptı',
@@ -391,6 +392,7 @@ const en = {
   'ago.d': '{n} d ago',
 
   'err.timeout': 'Timed out',
+  'err.slow': 'Too slow (could not carry a page load)',
   'err.connect': 'Connection failed',
   'err.cancelled': 'Cancelled',
   'err.redirect': 'Redirected',

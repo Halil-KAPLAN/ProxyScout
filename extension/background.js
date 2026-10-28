@@ -581,6 +581,8 @@ async function testProxies(job, ids) {
 // HTTPS bağlantısı açılır (her biri yeni alan adı → yeni tünel); ikisi de doğru çıkış IP'siyle
 // dönmelidir. Bir an çalışıp bir an düşen kararsız proxy'ler böylece elenir. Alan adı proxy
 // bilgisini taşıdığı için (bkz. lib/pac.js) tüm proxy'ler PAC değiştirilmeden aynı anda test edilir.
+// Son adımda gerçek bir sayfa yükü taşınır (aşağıda): küçük yanıtları geçirip sayfaları açamayan
+// yavaş proxy'ler de elenir.
 async function httpsCheck(p) {
   let ms = 0;
   for (let n = 0; n < 2; n++) {
@@ -595,7 +597,38 @@ async function httpsCheck(p) {
       return { ok: false, error: errCode(e) };
     }
   }
-  return { ok: true, ms };
+  const load = await loadCheck(p);
+  return load.ok ? { ok: true, ms, kbps: load.kbps } : load;
+}
+
+// Sayfa yükü testi. Ölçüm (2026-10, Firefox ve Chrome): yalnızca küçük HTTPS yanıtlarını geçen proxy'lerin
+// çoğu Wikipedia'yı açtı ama GitHub gibi ağır sayfaları 20 sn'de yükleyemedi. Bu yüzden aynı test adresinden
+// önbellekli büyük bir dosyanın ilk LOAD_BYTES baytı, HTTPS zaman aşımı içinde inmelidir.
+// Dosya Cloudflare Access'in uygulama başlatıcısıdır ve her alt alan adında aynıdır; adı (sürümle değişir)
+// test adresinin ana sayfasından okunur. Bulunamazsa bu adım atlanır.
+const LOAD_BYTES = 256 * 1024;
+let loadAsset = null;
+
+async function loadCheck(p) {
+  const host = () => httpsCheckHost(S.token, p, rnd());
+  try {
+    if (!loadAsset) {
+      const { res, text } = await fetchText(`https://${host()}/`, S.settings.sslTimeout);
+      const m = res.ok && /src="(\/assets\/[^"]+\.js)"/.exec(text);
+      if (!m) return { ok: true, kbps: null };
+      loadAsset = m[1];
+    }
+    const { res, text, ms } = await fetchText(`https://${host()}${loadAsset}`, S.settings.sslTimeout, { headers: { Range: `bytes=0-${LOAD_BYTES - 1}` } });
+    if (res.status === 404) {
+      loadAsset = null; // dosya adı değişmiş; bir sonraki proxy yeniden okur
+      return { ok: true, kbps: null };
+    }
+    if (!res.ok || text.length < LOAD_BYTES * 0.9) return { ok: false, error: 'slow' };
+    return { ok: true, kbps: Math.round(text.length / 1024 / Math.max(ms / 1000, 0.001)) };
+  } catch (e) {
+    const code = errCode(e);
+    return { ok: false, error: code === 'timeout' ? 'slow' : code };
+  }
 }
 
 const IPV4_HOST = /^\d{1,3}(\.\d{1,3}){3}$/;
@@ -614,6 +647,7 @@ async function sslPhase(job, list) {
     p.ssl = r.ok;
     p.sslError = r.ok ? null : r.error;
     p.sslMs = r.ok ? r.ms : null;
+    p.kbps = r.ok ? r.kbps ?? null : null;
     delete p.speed;
     p.checking = false;
     job.done++;
@@ -693,7 +727,9 @@ function pickBest(exclude = new Set()) {
   );
 }
 
-// Etkin rota üzerinden (işaretçisiz) gerçek bir HTTPS isteği atarak bağlantıyı doğrula.
+// Etkin rota üzerinden (işaretçisiz) gerçek HTTPS istekleriyle bağlantıyı doğrula: çıkış IP'si okunur ve
+// sıradan bir site de açılmalıdır. Bazı proxy'ler yalnızca birkaç adrese izin verir (IP servisleri açılır,
+// diğer siteler açılmaz); ölçümde bunlar yalnız IP kontrolüyle "bağlandı" görünüyordu.
 async function verifyRoute() {
   const one = (u) =>
     fetchText(`${u}?_=${rnd()}`, 12000).then((r) => {
@@ -701,8 +737,12 @@ async function verifyRoute() {
       if (!ip) throw new Error('invalid');
       return { ip, ms: r.ms };
     });
+  const site = () =>
+    fetchText(`https://www.wikipedia.org/?_=${rnd()}`, 12000).then((r) => {
+      if (!r.res.ok || r.text.length < 5000) throw new Error('invalid');
+    });
   try {
-    const r = await Promise.any([one('https://api.ipify.org/'), one('https://icanhazip.com/')]);
+    const [r] = await Promise.all([Promise.any([one('https://api.ipify.org/'), one('https://icanhazip.com/')]), site().catch((e) => Promise.reject({ errors: [e] }))]);
     if (S.realIp && r.ip === S.realIp) return { ok: false, error: 'direct' };
     return { ok: true, ...r };
   } catch (e) {
