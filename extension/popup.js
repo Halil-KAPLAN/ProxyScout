@@ -14,6 +14,7 @@ try {
   savedTab = localStorage.getItem('popupTab');
 } catch {}
 const ui = { filter: savedTab || 'eliteSsl', country: '', order: null };
+if (!['alive', 'eliteSsl', 'ssl', 'fav'].includes(ui.filter)) ui.filter = 'eliteSsl'; // eski "Elit (yalnız HTTP)" sekmesi kaldırıldı
 for (const x of document.querySelectorAll('#tabs button')) x.classList.toggle('on', x.dataset.f === ui.filter);
 // Liste açılışta, sekme/ülke değişince ve test bitince sıralanır; bağlanırken yerinde kalır.
 const resort = () => (ui.order = null);
@@ -31,7 +32,7 @@ const store = createStore(({ full }) => {
 });
 
 // Sekmeler yönetici sayfasındaki kategorilerle aynı tanımları kullanır (Elit ve HTTPS çakışmaz).
-const FILTERS = Object.fromEntries(['alive', 'eliteSsl', 'elite', 'ssl', 'fav'].map((id) => [id, CATEGORIES.find((c) => c.id === id).test]));
+const FILTERS = Object.fromEntries(['alive', 'eliteSsl', 'ssl', 'fav'].map((id) => [id, CATEGORIES.find((c) => c.id === id).test]));
 
 let raf = 0;
 function render() {

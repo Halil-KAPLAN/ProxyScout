@@ -30,12 +30,13 @@ test('koddaki tüm anahtarlar sözlükte var', () => {
   }
   // Dinamik olarak birleştirilen anahtarlar ('cat.' + id gibi).
   for (const k of [...keys]) if (k.endsWith('.')) keys.delete(k);
-  for (const id of ['all', 'new', 'alive', 'eliteSsl', 'elite', 'anonymous', 'transparent', 'ssl', 'dead', 'permanent', 'fav', 'mine']) keys.add('cat.' + id);
-  for (const id of ['new', 'eliteSsl', 'elite', 'anonymous', 'transparent', 'ssl', 'permanent']) keys.add(`cat.${id}.hint`);
+  for (const id of ['all', 'new', 'alive', 'eliteSsl', 'ssl', 'sslUnknown', 'httpOnly', 'dead', 'permanent', 'fav', 'mine']) keys.add('cat.' + id);
+  for (const id of ['new', 'eliteSsl', 'ssl', 'sslUnknown', 'httpOnly', 'permanent']) keys.add(`cat.${id}.hint`);
+  keys.add('status.httpOnly');
   for (const a of ['elite', 'anonymous', 'transparent']) keys.add('anon.' + a);
   for (const s of ['new', 'alive', 'dead']) keys.add('status.' + s);
   for (const p of ['start', 'download', 'prepare', 'http', 'ssl', 'geo']) keys.add('phase.' + p);
-  for (const e of ['timeout', 'connect', 'cancelled', 'redirect', 'auth', 'invalid', 'modified', 'direct']) keys.add('err.' + e);
+  for (const e of ['timeout', 'connect', 'cancelled', 'redirect', 'auth', 'invalid', 'modified', 'direct', 'slow']) keys.add('err.' + e);
   const missing = [...keys].filter((k) => !(k in MESSAGES.en));
   assert.deepEqual(missing, []);
   assert.ok(keys.size > 100, `beklenenden az anahtar bulundu: ${keys.size}`);
@@ -95,15 +96,20 @@ test('manifest yerelleştirmesi', () => {
   assert.equal(m.default_locale, 'en');
 });
 
-test('çalışanların alt kategorileri çakışmaz ve toplamı çalışanlara eşittir', async () => {
+test('çalışanların alt kategorileri çakışmaz, toplamı çalışanlara eşittir; yalnız HTTP olanlar çalışan sayılmaz', async () => {
   const { CATEGORIES } = await import('../extension/lib/ui.js');
+  const cat = (id) => CATEGORIES.find((c) => c.id === id);
   const subs = CATEGORIES.filter((c) => c.parent === 'alive');
   for (const anon of ['elite', 'anonymous', 'transparent'])
     for (const ssl of [true, false, null, undefined]) {
       const p = { status: 'alive', anon, ssl };
       const hits = subs.filter((c) => c.test(p, {})).map((c) => c.id);
-      assert.equal(hits.length, 1, `${anon}/${ssl} → ${hits}`);
+      // HTTPS testini geçemeyen (ssl === false) hiçbir çalışan grubunda değildir, yalnızca "Yalnız HTTP"dadır.
+      assert.equal(hits.length, ssl === false ? 0 : 1, `${anon}/${ssl} → ${hits}`);
+      assert.equal(cat('alive').test(p, {}), ssl !== false);
+      assert.equal(cat('httpOnly').test(p, {}), ssl === false);
     }
   const best = { status: 'alive', anon: 'elite', ssl: true };
   assert.deepEqual(subs.filter((c) => c.test(best, {})).map((c) => c.id), ['eliteSsl']);
+  assert.equal(cat('httpOnly').parent, undefined, 'Yalnız HTTP, Çalışanlar grubunun altında değil');
 });

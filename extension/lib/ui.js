@@ -59,17 +59,21 @@ export function createStore(onChange) {
   return st;
 }
 
+// "Çalışan" = gerçekten kullanılabilir: HTTP testini ve (yapıldıysa) HTTPS testini geçen proxy.
+// HTTP testini geçip HTTPS testini geçemeyenler "Yalnız HTTP"dir. Gerçek site ölçümünde (2026-10, Firefox ve
+// Chrome) bunların hiçbiri Wikipedia/GitHub'ı açamadı; bu yüzden çalışan sayılmazlar.
+export const isUsable = (p) => p.status === 'alive' && p.ssl !== false;
+export const isHttpOnly = (p) => p.status === 'alive' && p.ssl === false;
+
 export const CATEGORIES = [
   { id: 'all', icon: 'list', test: () => true },
   { id: 'new', icon: 'spark', hint: true, test: (p) => p.status === 'new' },
-  { id: 'alive', icon: 'check', test: (p) => p.status === 'alive' },
+  { id: 'alive', icon: 'check', test: isUsable },
   // Çalışanların alt grupları birbiriyle çakışmaz: her proxy tam olarak birinde yer alır.
-  // "Yalnız HTTP" grupları HTTPS'i desteklemeyen ya da HTTPS testi yapılmamış proxy'leri içerir.
-  { id: 'eliteSsl', parent: 'alive', hint: true, test: (p) => p.status === 'alive' && p.anon === 'elite' && p.ssl === true },
-  { id: 'elite', parent: 'alive', hint: true, test: (p) => p.status === 'alive' && p.anon === 'elite' && p.ssl !== true },
-  { id: 'ssl', parent: 'alive', hint: true, test: (p) => p.status === 'alive' && p.anon !== 'elite' && p.ssl === true },
-  { id: 'anonymous', parent: 'alive', hint: true, test: (p) => p.status === 'alive' && p.anon === 'anonymous' && p.ssl !== true },
-  { id: 'transparent', parent: 'alive', hint: true, test: (p) => p.status === 'alive' && p.anon === 'transparent' && p.ssl !== true },
+  { id: 'eliteSsl', parent: 'alive', hint: true, test: (p) => isUsable(p) && p.anon === 'elite' && p.ssl === true },
+  { id: 'ssl', parent: 'alive', hint: true, test: (p) => isUsable(p) && p.anon !== 'elite' && p.ssl === true },
+  { id: 'sslUnknown', parent: 'alive', hint: true, test: (p) => isUsable(p) && p.ssl == null },
+  { id: 'httpOnly', icon: 'globe', hint: true, test: isHttpOnly },
   { id: 'dead', icon: 'x', test: (p) => p.status === 'dead' },
   { id: 'permanent', parent: 'dead', hint: true, test: (p, s) => p.status === 'dead' && (p.streak || 0) >= (s.permanentFails || 3) },
   { id: 'fav', icon: 'star', test: (p) => !!p.fav },

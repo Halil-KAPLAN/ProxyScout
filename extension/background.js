@@ -573,6 +573,8 @@ async function testProxies(job, ids) {
     for (const p of alive) if (p.type !== 'http' && p.ssl == null) (p.ssl = true), touch(p);
   }
   if (S.settings.geo && !job.cancelled) await geoPhase(job, alive);
+  // Sonuçta "çalışan" yalnızca gerçekten kullanılabilenlerdir; HTTPS testini geçemeyenler (yalnız HTTP) sayılmaz.
+  job.alive = alive.filter((p) => p.ssl !== false).length;
   log('info', 'log.result', { alive: job.alive, dead: job.dead });
 }
 

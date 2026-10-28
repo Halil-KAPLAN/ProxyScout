@@ -38,14 +38,14 @@ sayfasında **Geliştirici modu**nu açın ve **Paketlenmemiş öğe yükle** �
   güvenilir kaynaklar açıktır (yaklaşık 500 proxy); daha fazlasını **Kaynaklar**'dan açabilirsiniz.
 - **Gerçek test:** her proxy önce HTTP, sonra iki ayrı HTTPS bağlantısıyla test edilir. Küçük bir test
   sayfasını açıp gerçek siteleri açamayan proxy'ler elenir.
-- **Çakışmayan gizlilik grupları** — her çalışan proxy tam olarak bir gruptadır:
-  - **Elit + HTTPS** – her sitede çalışır; ne IP'niz ne de proxy kullandığınız anlaşılır.
-  - **Elit (yalnız HTTP)** – elit, ama HTTPS sitelerde çalışmaz.
-  - **HTTPS (elit değil)** – HTTPS siteler şifreli kalır; `http://` sitelerde proxy görünür.
-  - **Anonim** – IP'nizi gizler ama proxy başlıkları (`Via`, `X-Forwarded-For`) gönderir.
-  - **Şeffaf** – gerçek IP'nizi sızdırır; gizlilik için kullanmayın.
+- **Yalnızca kullanılabilir proxy'ler çalışan sayılır:** proxy HTTP testini, HTTPS testini ve sayfa yükü
+  testini geçmelidir. Her çalışan proxy tam olarak bir gruptadır:
+  - **Elit + HTTPS** – HTTPS sitelerde çalışır; ne IP'niz ne de proxy kullandığınız anlaşılır.
+  - **HTTPS (elit değil)** – HTTPS sitelerde çalışır; `http://` sitelerde proxy (şeffafsa IP'niz) görünür.
+  - **HTTPS test edilmedi** – HTTPS testi kapalıyken HTTP testini geçenler.
 
-  Art arda birkaç kez başarısız olan proxy'ler **Ölüler**e taşınır.
+  Yalnızca HTTP testini geçenler ayrı bir **Yalnız HTTP** grubunda listelenir: HTTPS siteleri açamadıkları
+  için çalışan sayılmazlar. Art arda birkaç kez başarısız olan proxy'ler **Ölüler**e taşınır.
 - **Ülke, şehir ve bayrak:** her proxy için (çevrimdışı ülke veritabanı; çalışanlar için şehir ve
   servis sağlayıcı).
 - **Tek tıkla bağlanma**, **tek anahtarla** kapatma. Araç çubuğu ikonu durumu gösterir: yeşil bağlı,

@@ -1,7 +1,7 @@
 import { initLang, applyI18n, num, locale } from './lib/i18n.js';
 import {
   createStore, send, run, toast, t, errorText, CATEGORIES, anonText, statusText, phaseText, logText,
-  countryName, flag, ago, latencyClass, addr, uptime, esc, connectWithFeedback,
+  countryName, flag, ago, latencyClass, addr, uptime, esc, connectWithFeedback, isUsable, isHttpOnly,
 } from './lib/ui.js';
 import { icon } from './lib/icons.js';
 import { formatProxy } from './lib/parse.js';
@@ -240,7 +240,11 @@ const sourceName = (id) => (id === 'manual' ? t('src.manual') : store.sources.fi
 function rowHtml(p, i) {
   const isActive = store.active.id === p.id && store.active.enabled;
   const isConnecting = store.connecting === p.id;
-  const st = p.checking ? `<span class="chip checking">${t('status.checking')}</span>` : `<span class="chip ${p.status}">${statusText(p.status)}</span>`;
+  const st = p.checking
+    ? `<span class="chip checking">${t('status.checking')}</span>`
+    : isHttpOnly(p)
+      ? `<span class="chip httponly" title="${esc(t('cat.httpOnly.hint'))}">${t('status.httpOnly')}</span>`
+      : `<span class="chip ${p.status}">${statusText(p.status)}</span>`;
   const up = uptime(p);
   const ssl =
     p.status !== 'alive' ? ''
@@ -534,7 +538,7 @@ function renderJob() {
 
 function renderCounts() {
   let alive = 0, dead = 0;
-  for (const p of store.proxies.values()) p.status === 'alive' ? alive++ : p.status === 'dead' && dead++;
+  for (const p of store.proxies.values()) isUsable(p) ? alive++ : p.status === 'dead' && dead++;
   $('#counts').innerHTML = `<span>${t('counts.total')} <b>${num(store.proxies.size)}</b></span><span class="ok">${t('counts.alive')} <b>${num(alive)}</b></span><span class="bad">${t('counts.dead')} <b>${num(dead)}</b></span><span>${t('counts.visible')} <b>${num(ui.visible.length)}</b></span>${ui.selected.size ? `<span>${t('counts.selected')} <b>${num(ui.selected.size)}</b></span>` : ''}`;
 }
 

@@ -39,14 +39,15 @@ traffic goes through it; one switch turns it off again.
   default (about 500 proxies); turn on more under **Sources**.
 - **Real tests:** every proxy is tested over HTTP, then with two separate HTTPS connections. Proxies
   that load a tiny test page but fail on real websites are filtered out.
-- **Anonymity groups that never overlap** — every working proxy is in exactly one:
-  - **Elite + HTTPS** – works on every site and reveals neither your IP nor that you use a proxy.
-  - **Elite (HTTP only)** – elite, but fails on HTTPS sites.
-  - **HTTPS (not elite)** – HTTPS sites stay encrypted; on `http://` sites the proxy is visible.
-  - **Anonymous** – hides your IP but sends proxy headers (`Via`, `X-Forwarded-For`).
-  - **Transparent** – leaks your real IP; do not use it for privacy.
+- **Only usable proxies count as working:** a proxy must pass the HTTP test, the HTTPS test and a page-load
+  test. Working proxies are in exactly one group:
+  - **Elite + HTTPS** – works on HTTPS sites and reveals neither your IP nor that you use a proxy.
+  - **HTTPS (not elite)** – works on HTTPS sites; on `http://` sites the proxy (and, if transparent, your
+    IP) is visible.
+  - **HTTPS not tested** – passed the HTTP test while the HTTPS test is off.
 
-  Proxies that fail several times in a row are moved to **Dead**.
+  Proxies that pass only the HTTP test are listed separately under **HTTP only**: they cannot open HTTPS
+  sites, so they are not counted as working. Proxies that fail several times in a row are moved to **Dead**.
 - **Country, city and flag** for every proxy (offline country database, city/ISP for working proxies).
 - **One-click connect** and **one switch** to turn it off. The toolbar icon shows the state: green
   connected, amber connecting, red not responding, grey off.
