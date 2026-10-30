@@ -188,10 +188,10 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .dlg-row label.check { flex-direction: row; color: var(--text); }
 .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 
-/* Orta genişlikte "Son test" ve "Kaynak" gizlenir; Siteler sütunu yatay kaydırmasız sığar. */
+/* Orta genişlikte "Başarı", "Son test" ve "Kaynak" gizlenir; Siteler sütunu yatay kaydırmasız sığar. */
 @media (max-width: 1500px) and (min-width: 1101px) {
-  .thead, .row { grid-template-columns: 22px minmax(150px, 1.2fr) 66px 108px 78px 72px 70px minmax(150px, 1.3fr) 66px minmax(130px, 1fr) 100px; }
-  .thead > :nth-child(10), .row > :nth-child(10), .thead > :nth-child(11), .row > :nth-child(11) { display: none; }
+  .thead, .row { grid-template-columns: 22px minmax(150px, 1.2fr) 66px 108px 78px 72px 70px minmax(120px, 1.1fr) minmax(200px, 1.4fr) 100px; }
+  .thead > :nth-child(9), .row > :nth-child(9), .thead > :nth-child(10), .row > :nth-child(10), .thead > :nth-child(11), .row > :nth-child(11) { display: none; }
 }
 
 @media (max-width: 1100px) {

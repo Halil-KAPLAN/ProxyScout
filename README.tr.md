@@ -28,7 +28,7 @@ sayfasında **Geliştirici modu**nu açın ve **Paketlenmemiş öğe yükle** �
 
 | | |
 | --- | --- |
-| ![Popup'tan tek tıkla bağlanma](store/screenshots/tr/02-popup.png) | ![Gizlilik düzeyine göre kategoriler](store/screenshots/tr/03-cats.png) |
+| ![Popup'tan tek tıkla bağlanma](store/screenshots/tr/02-popup.png) | ![Her proxy ile hangi siteler açılıyor](store/screenshots/tr/03-sites.png) |
 | ![Kaynak ve tür seçimi](store/screenshots/tr/04-sources.png) | ![Tarayıcılar arası senkron](store/screenshots/tr/05-sync.png) |
 
 ## Özellikler
@@ -48,7 +48,7 @@ sayfasında **Geliştirici modu**nu açın ve **Paketlenmemiş öğe yükle** �
   için çalışan sayılmazlar. Art arda birkaç kez başarısız olan proxy'ler **Ölüler**e taşınır.
 - **Site testi:** en iyi 30 çalışan proxy seçtiğiniz siteleri de açmayı dener (varsayılan olarak YouTube,
   Discord, Google, Instagram ve X; **Ayarlar → Site testi**'nden site ekleyip çıkarabilirsiniz). Her satırda
-  hangi sitelerin ne kadar sürede açıldığı görünür, ör. `YT 320 · DC ✗`; **YouTube açılanlar** filtresi
+  hangi sitelerin ne kadar sürede açıldığı görünür, ör. `YT 320 · DC —`; **YouTube açılanlar** filtresi
   yalnızca o siteyi açan proxy'leri listeler.
 - **Ülke, şehir ve bayrak:** her proxy için (çevrimdışı ülke veritabanı; çalışanlar için şehir ve
   servis sağlayıcı).

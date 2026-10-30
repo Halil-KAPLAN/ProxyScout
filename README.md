@@ -29,7 +29,7 @@ traffic goes through it; one switch turns it off again.
 
 | | |
 | --- | --- |
-| ![One-click connect from the popup](store/screenshots/en/02-popup.png) | ![Sorted by anonymity level](store/screenshots/en/03-cats.png) |
+| ![One-click connect from the popup](store/screenshots/en/02-popup.png) | ![Which sites open through each proxy](store/screenshots/en/03-sites.png) |
 | ![Choose sources and proxy types](store/screenshots/en/04-sources.png) | ![Sync across browsers](store/screenshots/en/05-sync.png) |
 
 ## Features
@@ -50,7 +50,7 @@ traffic goes through it; one switch turns it off again.
   sites, so they are not counted as working. Proxies that fail several times in a row are moved to **Dead**.
 - **Site test:** the 30 best working proxies also try to open the sites you pick (YouTube, Discord,
   Google, Instagram and X by default; add or remove sites under **Settings → Site test**). Each row shows
-  which sites opened and how fast, e.g. `YT 320 · DC ✗`, and the **Opens YouTube** filter lists only the
+  which sites opened and how fast, e.g. `YT 320 · DC —`, and the **Opens YouTube** filter lists only the
   proxies that open that site.
 - **Country, city and flag** for every proxy (offline country database, city/ISP for working proxies).
 - **One-click connect** and **one switch** to turn it off. The toolbar icon shows the state: green

@@ -126,14 +126,14 @@ function renderList() {
     .join('');
 }
 
-// Site testi sonuçları: "YT 320 · DC ✗" (yalnızca ayarlarda açık siteler).
+// Site testi sonuçları: "YT 320 · DC —" (yalnızca ayarlarda açık siteler).
 function sitesLine(p) {
   if (!p.sites || !store.settings.siteTest) return '';
   const parts = (store.settings.sites || [])
     .filter((u) => p.sites[u])
     .map((u) => {
       const r = p.sites[u];
-      return `<span class="${r.ok ? 'ok' : 'bad'}" title="${esc(siteInfo(u).name)}">${esc(siteInfo(u).short)} ${r.ok ? shortMs(r.ms) : '✗'}</span>`;
+      return `<span class="${r.ok ? 'ok' : 'bad'}" title="${esc(siteInfo(u).name)}">${esc(siteInfo(u).short)} ${r.ok ? shortMs(r.ms) : '—'}</span>`;
     });
   return parts.length ? `<span class="m sites">${parts.join(' · ')}</span>` : '';
 }

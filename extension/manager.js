@@ -654,7 +654,7 @@ function siteScore(p) {
   return ok.length * 1e5 - (ok.length ? ok.reduce((n, x) => n + x.ms, 0) / ok.length : 0);
 }
 
-// Tablodaki "Siteler" hücresi: her etkin site için kısa ad + süre ya da ✗; ayrıntı üzerine gelince.
+// Tablodaki "Siteler" hücresi: her etkin site için kısa ad + süre ya da — (X sitesinin kısa adı ✗ ile karışmasın); ayrıntı üzerine gelince.
 function sitesHtml(p) {
   if (!p.sites) return '';
   return enabledSites()
@@ -663,7 +663,7 @@ function sitesHtml(p) {
       const r = p.sites[u];
       const i = siteInfo(u);
       const tip = `${i.name}: ${r.ok ? r.ms + ' ms' : errorText(r.err)}`;
-      return `<span class="site ${r.ok ? latencyClass(r.ms) || 'ok' : 'bad'}" title="${esc(tip)}">${esc(i.short)} ${r.ok ? shortMs(r.ms) : '✗'}</span>`;
+      return `<span class="site ${r.ok ? latencyClass(r.ms) || 'ok' : 'bad'}" title="${esc(tip)}">${esc(i.short)} ${r.ok ? shortMs(r.ms) : '—'}</span>`;
     })
     .join('');
 }
