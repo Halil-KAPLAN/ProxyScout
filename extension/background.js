@@ -666,17 +666,20 @@ async function sslPhase(job, list) {
 // sitelerin alan adları (hostMap) sırayla her proxy'ye yönlendirilir; bir proxy'nin tüm siteleri aynı anda
 // denenir. Bu sürede kullanıcının başka sekmede açtığı aynı adresler de test edilen proxy'den geçer
 // (yalnızca listedeki adresler, test bitince eski haline döner). Süreyi sınırlamak için en iyi SITE_MAX
-// çalışan proxy denenir.
+// çalışan proxy denenir. Ücretsiz proxy'ler dakikalar içinde açılıp kapanır ve ilk bağlantıda sık takılır
+// (2026-10-30 ölçümü: açılmayan sitelerin yarısı aynı proxy'yle sonradan açıldı; Cloudflare'in 403'ü de
+// kalıcı değil): açılmayan site hemen bir kez, tüm proxy'ler bitince bir kez daha denenir.
 const SITE_MAX = 30;
-const SITE_TIMEOUT = 8000;
+const SITE_TIMEOUT = 10000;
+const SITE_RETRY_TIMEOUT = 15000;
 const siteUrls = () => (S.settings.sites || []).filter((u) => siteHost(u));
 
 // Yanıt başlıkları gelince süre ölçülür ve gövde indirilmeden bağlantı kesilir. Yönlendirme izlenmez
 // (başka alan adına gidip proxy'yi atlamasın); yönlendirme yanıtı da sitenin açıldığı anlamına gelir.
-async function siteProbe(url) {
+async function siteProbe(url, timeout = SITE_TIMEOUT) {
   const ctrl = new AbortController();
   S.job?.ctrls.add(ctrl);
-  const timer = setTimeout(() => ctrl.abort(), SITE_TIMEOUT);
+  const timer = setTimeout(() => ctrl.abort(), timeout);
   const t0 = performance.now();
   try {
     const res = await fetch(url, { cache: 'no-store', credentials: 'omit', redirect: 'manual', signal: ctrl.signal });
@@ -692,7 +695,18 @@ async function siteProbe(url) {
   }
 }
 
-const probeSites = async (urls) => Object.fromEntries((await Promise.all(urls.map(siteProbe))).map((r, i) => [urls[i], r]));
+const siteRetry = (r) => !r.ok && r.err !== 'cancelled';
+async function probeSites(urls) {
+  const out = Object.fromEntries((await Promise.all(urls.map((u) => siteProbe(u)))).map((r, i) => [urls[i], r]));
+  const again = urls.filter((u) => siteRetry(out[u]));
+  if (again.length && !S.job?.cancelled) {
+    const rs = await Promise.all(again.map((u) => siteProbe(u, SITE_RETRY_TIMEOUT)));
+    again.forEach((u, i) => {
+      if (rs[i].ok || rs[i].err !== 'cancelled') out[u] = rs[i];
+    });
+  }
+  return out;
+}
 
 async function sitesPhase(job, list) {
   const urls = siteUrls();
@@ -718,6 +732,23 @@ async function sitesPhase(job, list) {
       p.checking = false;
       if (job.cancelled) break;
       Object.assign(p, { sites, sitesTs: Date.now() });
+      job.done++;
+      touch(p);
+      scheduleSave();
+    }
+    // İkinci tur: yalnızca açılmayan siteler, aradan zaman geçtikten sonra.
+    const again = cands.filter((p) => p.sites && urls.some((u) => p.sites[u] && !p.sites[u].ok));
+    job.total += again.length;
+    for (const p of again) {
+      if (job.cancelled) break;
+      const fail = urls.filter((u) => p.sites[u] && !p.sites[u].ok);
+      await applyProxy(Object.fromEntries(fail.map((u) => [siteHost(u), directiveFor(p)])));
+      p.checking = true;
+      touch(p);
+      const rs = await Promise.all(fail.map((u) => siteProbe(u, SITE_RETRY_TIMEOUT)));
+      p.checking = false;
+      if (job.cancelled) break;
+      p.sites = { ...p.sites, ...Object.fromEntries(fail.flatMap((u, i) => (rs[i].ok ? [[u, rs[i]]] : []))) };
       job.done++;
       touch(p);
       scheduleSave();

@@ -95,7 +95,10 @@ behind a random per-install token, and the PAC script routes only that request t
 3. **Site test** (optional, on by default) – the 30 best usable proxies open each site in Settings →
    Site test (`settings.sites`, built-ins in `lib/sites.js`). Chrome's PAC script sees only the host of
    an HTTPS request, so the site hosts are routed through one proxy at a time with `hostMap`, all sites
-   in parallel (8 s timeout each); the time to the response headers is stored as `p.sites[url] = { ok, ms }`.
+   in parallel (10 s timeout). Free proxies switch between working and failing within minutes, so a site
+   that did not open is tried again at once and once more after all proxies are done (15 s each); in a
+   30-proxy measurement half of the failures opened later. The time to the response headers is stored as
+   `p.sites[url] = { ok, ms }`.
    A redirect or any status below 400 counts as open. After connecting, the sites are measured again
    through the active proxy.
 4. **Location** – country from the bundled DB-IP Lite database (`lib/geoip.js`, refreshed with
