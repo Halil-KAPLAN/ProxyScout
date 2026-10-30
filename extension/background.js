@@ -19,7 +19,6 @@ const DEFAULT_SETTINGS = {
   geo: true,              // çalışan proxy'lerin ülke/şehir bilgisini bul (ip-api.com)
   autoTestAfterDownload: true,
   maxPerSource: 0,        // 0 = sınırsız
-  permanentFails: 3,      // art arda bu kadar başarısız olan "kalıcı ölü" sayılır
   watchMinutes: 2,        // bağlı proxy'nin canlılık kontrol aralığı
   recheckMinutes: 0,      // çalışan proxy'leri periyodik yeniden test (0 = kapalı)
   bypass: ['<local>', 'localhost', '127.0.0.1', '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '*.local'],
@@ -1142,9 +1141,8 @@ const handlers = {
 
   delete: ({ ids }) => removeIds(ids),
   purge: ({ mode }) => {
-    const pf = S.settings.permanentFails;
     const ids = [...S.proxies.values()]
-      .filter((p) => (mode === 'all' ? p.id !== S.active.id : mode === 'permanent' ? p.status === 'dead' && p.streak >= pf : p.status === 'dead'))
+      .filter((p) => (mode === 'all' ? p.id !== S.active.id : p.status === 'dead'))
       .map((p) => p.id);
     const n = removeIds(ids);
     log('info', 'log.deleted', { n });

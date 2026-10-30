@@ -30,8 +30,8 @@ test('koddaki tüm anahtarlar sözlükte var', () => {
   }
   // Dinamik olarak birleştirilen anahtarlar ('cat.' + id gibi).
   for (const k of [...keys]) if (k.endsWith('.')) keys.delete(k);
-  for (const id of ['all', 'new', 'alive', 'eliteSsl', 'ssl', 'sslUnknown', 'httpOnly', 'dead', 'permanent', 'fav', 'mine']) keys.add('cat.' + id);
-  for (const id of ['new', 'eliteSsl', 'ssl', 'sslUnknown', 'httpOnly', 'permanent']) keys.add(`cat.${id}.hint`);
+  for (const id of ['all', 'new', 'alive', 'eliteSsl', 'ssl', 'sslUnknown', 'httpOnly', 'dead', 'fav', 'mine']) keys.add('cat.' + id);
+  for (const id of ['new', 'eliteSsl', 'ssl', 'sslUnknown', 'httpOnly']) keys.add(`cat.${id}.hint`);
   keys.add('status.httpOnly');
   for (const a of ['elite', 'anonymous', 'transparent']) keys.add('anon.' + a);
   for (const s of ['new', 'alive', 'dead']) keys.add('status.' + s);

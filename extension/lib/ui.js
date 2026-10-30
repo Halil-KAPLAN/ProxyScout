@@ -75,7 +75,6 @@ export const CATEGORIES = [
   { id: 'sslUnknown', parent: 'alive', hint: true, test: (p) => isUsable(p) && p.ssl == null },
   { id: 'httpOnly', icon: 'globe', hint: true, test: isHttpOnly },
   { id: 'dead', icon: 'x', test: (p) => p.status === 'dead' },
-  { id: 'permanent', parent: 'dead', hint: true, test: (p, s) => p.status === 'dead' && (p.streak || 0) >= (s.permanentFails || 3) },
   { id: 'fav', icon: 'star', test: (p) => !!p.fav },
   { id: 'mine', icon: 'user', test: (p) => !!p.mine },
 ];
