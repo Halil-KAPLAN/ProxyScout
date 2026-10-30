@@ -39,13 +39,17 @@ ProxyScout, onlarca kaynaktan ücretsiz proxy listelerini indirir, her birini ge
 
 ■ GERÇEKTEN ÇALIŞANLARI AYIKLAR
 • 21 hazır kaynak (ProxyScrape, free-proxy-list.net, Spys.me, monosans, TheSpeedX…) — her kaynakta HTTP / SOCKS4 / SOCKS5 türlerini ayrı ayrı seçin, kendi liste adreslerinizi ekleyin.
-• Her proxy önce HTTP, sonra iki ayrı HTTPS bağlantısıyla test edilir. Yalnızca küçük bir test sayfasını açabilen ama gerçek siteleri açamayan proxy'ler elenir.
+• Her proxy önce HTTP, sonra iki ayrı HTTPS bağlantısı ve bir sayfa yükü testiyle denenir. Küçük bir test sayfasını açıp gerçek siteleri açamayan proxy'ler elenir; yalnızca HTTPS sitelerde çalışanlar "çalışan" sayılır.
 • Yüzlerce proxy aynı anda test edilir; bağlanırken seçtiğiniz proxy yeniden doğrulanır.
 
-■ GİZLİLİK DÜZEYİNE GÖRE KATEGORİLER
-• Elit + HTTPS · Elit · HTTPS (elit değil) · Anonim · Şeffaf — her proxy tek bir grupta.
-• Elit: ne IP'niz ne de proxy kullandığınız anlaşılır. Şeffaf: gerçek IP'nizi sızdırır (uyarıyla gösterilir).
-• Ölüler ve kalıcı ölüler ayrı listede; tek tıkla temizleyin.
+■ AÇIK GRUPLAR
+• Elit + HTTPS · HTTPS (elit değil) · HTTPS test edilmedi — her çalışan proxy tek bir grupta.
+• Elit: ne IP'niz ne de proxy kullandığınız anlaşılır. Şeffaf proxy'ler gerçek IP'nizi sızdırır (uyarıyla gösterilir).
+• HTTPS siteleri açamayanlar ayrı bir "Yalnız HTTP" grubunda, ölüler ayrı listede; tek tıkla temizleyin.
+
+■ SİTE TESTİ
+• YouTube, Discord, Google, Instagram, X gibi seçtiğiniz siteler en iyi çalışan proxy'lerle denenir; her proxy için hangi sitenin açıldığı ve yanıt süresi listede görünür.
+• Hazır siteleri açıp kapatın ya da kendi sitenizi ekleyin; "YouTube açılanlar" filtresiyle yalnızca o siteyi açan proxy'leri görün.
 
 ■ TEK TIKLA BAĞLAN
 • Popup'tan ya da yönetici sayfasında çift tıklayarak bağlanın; tek anahtarla açıp kapatın.
@@ -55,7 +59,7 @@ ProxyScout, onlarca kaynaktan ücretsiz proxy listelerini indirir, her birini ge
 
 ■ ÜLKE, ŞEHİR VE BAYRAK
 • Her proxy'nin ülkesi indirildiği anda bayrağıyla görünür (çevrimdışı veritabanı); çalışanların şehri ve servis sağlayıcısı da gösterilir.
-• Ülkeye, türe ve gizlilik düzeyine göre filtreleyin; yanıt süresine göre sıralayın.
+• Ülkeye, türe ve açtığı siteye göre filtreleyin; yanıt süresine göre sıralayın.
 
 ■ TÜM TARAYICILARINIZDA AYNI LİSTE
 • Chrome senkronu: kurulum gerektirmez.
@@ -84,13 +88,17 @@ ProxyScout downloads free proxy lists from dozens of sources, really tests every
 
 ■ KEEPS ONLY THE PROXIES THAT REALLY WORK
 • 21 built-in sources (ProxyScrape, free-proxy-list.net, Spys.me, monosans, TheSpeedX…) — pick HTTP / SOCKS4 / SOCKS5 per source and add your own list URLs.
-• Every proxy is tested over HTTP, then with two separate HTTPS connections. Proxies that can load a tiny test page but fail on real websites are filtered out.
+• Every proxy is tested over HTTP, then with two separate HTTPS connections and a page-load test. Proxies that can load a tiny test page but fail on real websites are filtered out; only proxies that work on HTTPS sites count as working.
 • Hundreds of proxies are tested in parallel; the proxy you pick is verified again when you connect.
 
-■ SORTED BY ANONYMITY LEVEL
-• Elite + HTTPS · Elite · HTTPS (not elite) · Anonymous · Transparent — each proxy in exactly one group.
-• Elite: neither your IP nor the fact that you use a proxy is revealed. Transparent: leaks your real IP (clearly marked).
-• Dead and permanently dead proxies are kept separately; clean them up in one click.
+■ CLEAR GROUPS
+• Elite + HTTPS · HTTPS (not elite) · HTTPS not tested — each working proxy in exactly one group.
+• Elite: neither your IP nor the fact that you use a proxy is revealed. Transparent proxies leak your real IP (clearly marked).
+• Proxies that cannot open HTTPS sites are listed under "HTTP only", dead ones separately; clean them up in one click.
+
+■ SITE TEST
+• The sites you pick — YouTube, Discord, Google, Instagram, X and more — are tried through the best working proxies; the list shows which sites opened through each proxy and how fast.
+• Turn built-in sites on or off or add your own; the "Opens YouTube" filter shows only the proxies that open that site.
 
 ■ ONE-CLICK CONNECT
 • Connect from the popup or by double-clicking in the manager; one switch turns it on and off.
@@ -100,7 +108,7 @@ ProxyScout downloads free proxy lists from dozens of sources, really tests every
 
 ■ COUNTRY, CITY AND FLAGS
 • Every proxy shows its country flag as soon as it is downloaded (offline database); working ones also show city and ISP.
-• Filter by country, type and anonymity; sort by response time.
+• Filter by country, type and the sites a proxy opens; sort by response time.
 
 ■ THE SAME LIST IN ALL YOUR BROWSERS
 • Chrome sync: no setup needed.

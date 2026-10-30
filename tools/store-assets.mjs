@@ -1,5 +1,6 @@
 // Mağaza görsellerini üretir (Chrome Web Store + Edge Add-ons):
 //   store/screenshots/<tr|en>/0N-*.png   1280×800 ekran görüntüleri (başlıklı çerçeve)
+//   store/screenshots/opera/<tr|en>/0N-*.png  aynıları 800×500 (Opera add-ons)
 //   store/promo/small-440x280-<dil>.png  küçük tanıtım görseli
 //   store/promo/marquee-1400x560-<dil>.png  büyük tanıtım görseli
 // Eklenti gerçek bir Chrome'da çalıştırılır: listeler indirilip test edilir, bir proxy'ye bağlanılır.
@@ -24,17 +25,17 @@ const b64 = (buf) => 'data:image/png;base64,' + Buffer.from(buf).toString('base6
 
 const TEXT = {
   tr: {
-    list: ['Çalışan proxy\'leri bulur, test eder, ayıklar', 'Onlarca kaynaktan liste indirir; HTTP ve HTTPS üzerinden gerçekten çalışanları ayırır.'],
-    popup: ['Tek tıkla bağlan, tek tıkla kapat', 'En iyi proxy\'ler en üstte — ülke bayrağı, gizlilik düzeyi ve yanıt süresiyle.'],
-    cats: ['Gizlilik düzeyine göre kategoriler', 'Elit + HTTPS, Elit, Anonim, Şeffaf — her proxy tek bir grupta; ülke, gecikme ve başarı oranıyla.'],
+    list: ['Çalışan proxy\'leri bulur, test eder, ayıklar', 'Onlarca kaynaktan liste indirir; yalnızca HTTPS sitelerde gerçekten çalışanları sayar ve gruplara ayırır.'],
+    popup: ['Tek tıkla bağlan, tek tıkla kapat', 'En iyi proxy\'ler en üstte — ülke, gizlilik, yanıt süresi ve açtığı sitelerle.'],
+    sites: ['YouTube, Discord açılıyor mu?', 'Seçtiğin siteler en iyi proxy\'lerle denenir; hangisinin açıldığı ve ne kadar sürdüğü listede görünür. Kendi siteni de ekle.'],
     sources: ['Kaynakları ve türleri sen seç', '21 hazır kaynak; HTTP, SOCKS4, SOCKS5 seçimi ve kendi listelerini ekleme.'],
     sync: ['Listen tüm tarayıcılarında', 'Chrome senkronu ya da tek tıkla Google Drive: bulduğun proxy\'ler her cihazda hazır.'],
     tagline: 'Ücretsiz proxy\'leri bul, test et, tek tıkla bağlan',
   },
   en: {
-    list: ['Finds, tests and sorts working proxies', 'Downloads lists from dozens of sources and keeps only the ones that really work over HTTP and HTTPS.'],
-    popup: ['Connect in one click, turn off in one click', 'The best proxies on top — with country flag, anonymity level and response time.'],
-    cats: ['Sorted by anonymity level', 'Elite + HTTPS, Elite, Anonymous, Transparent — each proxy in exactly one group, with country, latency and uptime.'],
+    list: ['Finds, tests and sorts working proxies', 'Downloads lists from dozens of sources and counts only the proxies that really work on HTTPS sites, in clear groups.'],
+    popup: ['Connect in one click, turn off in one click', 'The best proxies on top — with country, anonymity, response time and the sites they open.'],
+    sites: ['Does it open YouTube or Discord?', 'The sites you pick are tried through the best proxies; the list shows which ones opened and how fast. Add your own sites too.'],
     sources: ['You choose the sources and types', '21 built-in sources; pick HTTP, SOCKS4, SOCKS5 and add your own lists.'],
     sync: ['Your list in every browser', 'Chrome sync or one-click Google Drive: the proxies you found are ready on every device.'],
     tagline: 'Find free proxies, test them, connect in one click',
@@ -75,7 +76,7 @@ try {
   await cmd('download', {});
   const t0 = Date.now();
   while ((await cmd('state')).job) {
-    if (Date.now() - t0 > 15 * 60000) throw new Error('test zaman aşımı');
+    if (Date.now() - t0 > 25 * 60000) throw new Error('test zaman aşımı'); // site testi dahil
     await sleep(4000);
   }
   const s = await cmd('state');
@@ -109,7 +110,17 @@ try {
       raw[`${lang}-${name}`] = await page.screenshot();
     };
     await shot('list', () => document.querySelector('[data-cat=eliteSsl]').click());
-    await shot('cats', () => document.querySelector('[data-cat=alive]').click());
+    await shot('sites', () => {
+      document.querySelector('[data-cat=alive]').click();
+      const sel = document.querySelector('#fSite');
+      sel.value = 'https://www.youtube.com/';
+      sel.dispatchEvent(new Event('change'));
+    });
+    await page.evaluate(() => {
+      const sel = document.querySelector('#fSite');
+      sel.value = '';
+      sel.dispatchEvent(new Event('change'));
+    });
     await shot('sources', () => document.querySelector('[data-view=sources]').click());
     await shot('sync', () => {
       document.querySelector('[data-view=settings]').click();
@@ -142,15 +153,20 @@ try {
     </style></head><body>${html}</body></html>`);
     await sleep(300);
     mkdirSync(path.dirname(file), { recursive: true });
-    writeFileSync(file, await frame.screenshot());
+    const png = await frame.screenshot();
+    writeFileSync(file, png);
     console.log(path.relative(ROOT, file));
+    return png;
   };
+  // Opera add-ons 800×500 ister: aynı görsel küçültülür.
+  const opera = (png, lang, name) =>
+    render(`<img src="${b64(png)}" style="display:block;width:800px;height:500px">`, 800, 500, path.join(OUT, 'screenshots', 'opera', lang, name));
 
   for (const lang of ['tr', 'en']) {
     const T = TEXT[lang];
     const dir = path.join(OUT, 'screenshots', lang);
-    const wide = (key, n, title, sub) =>
-      render(
+    const wide = async (key, n, title, sub) =>
+      opera(await render(
         `<div style="padding:44px 56px 0">
            <div class="brand" style="font-size:18px;color:#9fb0c3;margin-bottom:14px"><img src="${logo}" width="30" height="30">ProxyScout</div>
            <h1 style="font-size:40px;line-height:1.15">${title}</h1>
@@ -158,9 +174,9 @@ try {
          </div>
          <img class="shot" src="${b64(raw[`${lang}-${key}`])}" style="position:absolute;left:56px;top:228px;width:1168px">`,
         1280, 800, path.join(dir, `${n}-${key}.png`),
-      );
+      ), lang, `${n}-${key}.png`);
     await wide('list', '01', ...T.list);
-    await render(
+    const popPng = await render(
       `<div style="position:absolute;left:72px;top:0;bottom:0;width:560px;display:flex;flex-direction:column;justify-content:center">
          <div class="brand" style="font-size:20px;color:#9fb0c3;margin-bottom:22px"><img src="${logo}" width="40" height="40">ProxyScout</div>
          <h1 style="font-size:50px;line-height:1.1">${T.popup[0]}</h1>
@@ -169,7 +185,8 @@ try {
        <img class="shot" src="${b64(raw[`${lang}-popup`])}" style="position:absolute;right:110px;top:50%;transform:translateY(-50%);width:418px">`,
       1280, 800, path.join(dir, '02-popup.png'),
     );
-    await wide('cats', '03', ...T.cats);
+    await opera(popPng, lang, '02-popup.png');
+    await wide('sites', '03', ...T.sites);
     await wide('sources', '04', ...T.sources);
     await wide('sync', '05', ...T.sync);
 
