@@ -181,18 +181,19 @@ jobs:
       ZIP: ${{ needs.release.outputs.opera_zip }}
       OPERA_PACKAGE_ID: '307789'
     steps:
-      - name: Opera için hatırlatma aç
+      - name: Open an Opera reminder issue
         run: |
           NAME=$(basename "$ZIP")
           URL="https://github.com/${{ github.repository }}/releases/download/v$VERSION/$NAME"
           cat > body.md <<BODY
-          Opera add-ons'un otomatik yükleme API'si yok; bu sürümü panelden elle yükleyin (2-3 dakika).
+          Opera add-ons has no upload API, so upload this version from the developer panel (2-3 minutes).
 
-          1. Paketi indirin: [$NAME]($URL)
-          2. [Opera paneli → Versions](https://addons.opera.com/developer/package/$OPERA_PACKAGE_ID/?tab=versions) → **Upload new version** → zip'i seçin → **Upload add-on**.
-          3. Yeni sürümün sayfasında açıklama ve görselleri kontrol edin (önceki sürümden gelmediyse \`store/LISTING.md\` ve \`store/screenshots/opera/\`). Her alanı yanındaki ✔ ile onaylayın, sonra **General** sekmesinde **Submit changes**.
+          1. Download the package: [$NAME]($URL)
+          2. [Opera panel → Versions](https://addons.opera.com/developer/package/$OPERA_PACKAGE_ID/?tab=versions) → **Upload new version** → choose the zip → **Upload add-on**.
+          3. On the new version's page check the description and images (if they were not copied from the previous version, use \`store/LISTING.md\` and \`store/screenshots/opera/\`). Confirm each field with its ✔, then **Submit changes** on the **General** tab.
+          4. If an earlier version is still awaiting moderation, add a note under **Conversation** saying this version replaces it.
 
-          Opera'nın otomatik moderasyonu açık; paket kontrolü geçerse elle inceleme beklemeden yayınlanır. Yükleme bitince bu issue'yu kapatın.
+          Opera's automatic moderation is on; if the package check passes it is published without a manual review. Close this issue when the upload is done.
           BODY
           sed -i 's/^          //' body.md
-          gh issue create --repo "${{ github.repository }}" --title "Opera add-ons: v$VERSION sürümünü yükle" --body-file body.md
+          gh issue create --repo "${{ github.repository }}" --title "Opera add-ons: upload v$VERSION" --body-file body.md
