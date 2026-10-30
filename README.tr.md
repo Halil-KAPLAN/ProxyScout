@@ -46,6 +46,10 @@ sayfasında **Geliştirici modu**nu açın ve **Paketlenmemiş öğe yükle** �
 
   Yalnızca HTTP testini geçenler ayrı bir **Yalnız HTTP** grubunda listelenir: HTTPS siteleri açamadıkları
   için çalışan sayılmazlar. Art arda birkaç kez başarısız olan proxy'ler **Ölüler**e taşınır.
+- **Site testi:** en iyi 30 çalışan proxy seçtiğiniz siteleri de açmayı dener (varsayılan olarak YouTube,
+  Discord, Google, Instagram ve X; **Ayarlar → Site testi**'nden site ekleyip çıkarabilirsiniz). Her satırda
+  hangi sitelerin ne kadar sürede açıldığı görünür, ör. `YT 320 · DC ✗`; **YouTube açılanlar** filtresi
+  yalnızca o siteyi açan proxy'leri listeler.
 - **Ülke, şehir ve bayrak:** her proxy için (çevrimdışı ülke veritabanı; çalışanlar için şehir ve
   servis sağlayıcı).
 - **Tek tıkla bağlanma**, **tek anahtarla** kapatma. Araç çubuğu ikonu durumu gösterir: yeşil bağlı,
@@ -106,6 +110,8 @@ Kendi Google istemcinizi kullanmak için (ör. bir çatalda):
 - Firefox: kendi proxy'lerinizin kullanıcı adı/şifresi, isteğe bağlı "kimlik doğrulama bilgisi" iznini
   verdikten sonra senkronlanır (Ayarlar → Senkronizasyon → **Şimdi senkronize et**).
 - Bağlıyken liste indirme aktif proxy üzerinden yapılır.
+- Chrome, Edge ve Opera: site testi sürerken listedeki bir siteyi başka bir sekmede açarsanız istek o an
+  test edilen proxy üzerinden gidebilir.
 - Silme işlemleri senkronlanmaz: bir cihazda silinen çalışan proxy başka bir cihazdan geri gelebilir.
 
 ## Geliştirme

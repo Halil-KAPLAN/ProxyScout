@@ -2,6 +2,7 @@
 // Kayıtlar ve hatalar dil anahtarı olarak tutulur; arayüz bunları seçili dilde gösterir (lib/messages.js).
 import { IS_FIREFOX, HAS_BROWSER_SYNC, HAS_WEB_AUTH, authRedirectUrl, credsSyncAllowed } from './lib/platform.js';
 import { DEFAULT_SOURCES, enabledTypes } from './lib/sources.js';
+import { DEFAULT_SITES, siteHost } from './lib/sites.js';
 import { parseProxyList, parseManualList, proxyId } from './lib/parse.js';
 import { buildPac, findProxy, toProxyInfo, directiveFor, checkMarker, directMarker, httpsCheckHost } from './lib/pac.js';
 import { t, has, setLang, resolveLang } from './lib/i18n.js';
@@ -17,6 +18,8 @@ const DEFAULT_SETTINGS = {
   sslTest: true,          // çalışan proxy'lerde HTTPS testi (iki ayrı HTTPS bağlantısı)
   sslTimeout: 10000,
   geo: true,              // çalışan proxy'lerin ülke/şehir bilgisini bul (ip-api.com)
+  siteTest: true,         // çalışan proxy'lerle aşağıdaki sitelere erişimi ve yanıt süresini ölç
+  sites: DEFAULT_SITES,   // site testi listesi (URL'ler; bkz. lib/sites.js)
   autoTestAfterDownload: true,
   maxPerSource: 0,        // 0 = sınırsız
   watchMinutes: 2,        // bağlı proxy'nin canlılık kontrol aralığı
@@ -571,6 +574,7 @@ async function testProxies(job, ids) {
     // Gerçek test kapalıysa SOCKS proxy'leri (her protokolü taşıdıkları için) HTTPS destekli say.
     for (const p of alive) if (p.type !== 'http' && p.ssl == null) (p.ssl = true), touch(p);
   }
+  if (S.settings.siteTest && !job.cancelled) await sitesPhase(job, alive);
   if (S.settings.geo && !job.cancelled) await geoPhase(job, alive);
   // Sonuçta "çalışan" yalnızca gerçekten kullanılabilenlerdir; HTTPS testini geçemeyenler (yalnız HTTP) sayılmaz.
   job.alive = alive.filter((p) => p.ssl !== false).length;
@@ -655,6 +659,72 @@ async function sslPhase(job, list) {
     touch(p);
     if (r.ok) log('ok', 'log.sslOk', { addr: fmt(p), ms: r.ms });
   }, job);
+}
+
+// Site testi. Bir sitenin bir proxy üzerinden açılıp açılmadığı ve ilk yanıtın ne kadar sürdüğü ölçülür.
+// Chrome'un PAC'ı HTTPS isteklerinde yalnızca alan adını gördüğü için proxy bilgisi adrese gömülemez:
+// sitelerin alan adları (hostMap) sırayla her proxy'ye yönlendirilir; bir proxy'nin tüm siteleri aynı anda
+// denenir. Bu sürede kullanıcının başka sekmede açtığı aynı adresler de test edilen proxy'den geçer
+// (yalnızca listedeki adresler, test bitince eski haline döner). Süreyi sınırlamak için en iyi SITE_MAX
+// çalışan proxy denenir.
+const SITE_MAX = 30;
+const SITE_TIMEOUT = 8000;
+const siteUrls = () => (S.settings.sites || []).filter((u) => siteHost(u));
+
+// Yanıt başlıkları gelince süre ölçülür ve gövde indirilmeden bağlantı kesilir. Yönlendirme izlenmez
+// (başka alan adına gidip proxy'yi atlamasın); yönlendirme yanıtı da sitenin açıldığı anlamına gelir.
+async function siteProbe(url) {
+  const ctrl = new AbortController();
+  S.job?.ctrls.add(ctrl);
+  const timer = setTimeout(() => ctrl.abort(), SITE_TIMEOUT);
+  const t0 = performance.now();
+  try {
+    const res = await fetch(url, { cache: 'no-store', credentials: 'omit', redirect: 'manual', signal: ctrl.signal });
+    const ms = Math.round(performance.now() - t0);
+    if (res.type === 'opaqueredirect' || res.status < 400) return { ok: true, ms };
+    return { ok: false, ms, err: 'http:' + res.status };
+  } catch (e) {
+    return { ok: false, err: errCode(e) };
+  } finally {
+    clearTimeout(timer);
+    ctrl.abort();
+    S.job?.ctrls.delete(ctrl);
+  }
+}
+
+const probeSites = async (urls) => Object.fromEntries((await Promise.all(urls.map(siteProbe))).map((r, i) => [urls[i], r]));
+
+async function sitesPhase(job, list) {
+  const urls = siteUrls();
+  if (!urls.length) return;
+  const rank = { elite: 0, anonymous: 1, transparent: 2 };
+  const cands = list
+    .filter((p) => p.status === 'alive' && p.ssl !== false)
+    .sort((a, b) => (a.ssl === true ? 0 : 1) - (b.ssl === true ? 0 : 1) || rank[a.anon] - rank[b.anon] || (a.sslMs ?? 1e9) - (b.sslMs ?? 1e9))
+    .slice(0, SITE_MAX);
+  if (!cands.length) return;
+  job.phase = 'sites';
+  job.total = cands.length;
+  job.done = 0;
+  log('info', 'log.sitesStart', { n: cands.length, s: urls.length });
+  try {
+    for (const p of cands) {
+      if (job.cancelled) break;
+      const dir = directiveFor(p);
+      await applyProxy(Object.fromEntries(urls.map((u) => [siteHost(u), dir])));
+      p.checking = true;
+      touch(p);
+      const sites = await probeSites(urls);
+      p.checking = false;
+      if (job.cancelled) break;
+      Object.assign(p, { sites, sitesTs: Date.now() });
+      job.done++;
+      touch(p);
+      scheduleSave();
+    }
+  } finally {
+    await applyProxy({});
+  }
 }
 
 const GEO_FIELDS = 'status,countryCode,country,city,isp,query';
@@ -785,6 +855,11 @@ async function connect(id, { verify = true } = {}) {
       touch(p);
       scheduleSave();
       log('ok', 'log.connected', { ...base, country: p.country || '', ms: r.ms });
+      // Bağlı proxy'nin site sonuçlarını tazele (tüm trafik zaten bu proxy'den geçiyor; beklenmez).
+      if (S.settings.siteTest && siteUrls().length && !S.job)
+        probeSites(siteUrls()).then((sites) => {
+          if (S.active.enabled && S.active.id === p.id) Object.assign(p, { sites, sitesTs: Date.now() }), touch(p), scheduleSave();
+        });
     } else {
       log('err', 'log.connectedNoResp', { addr: base.addr, err: '@err.' + r.error });
     }

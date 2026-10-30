@@ -102,6 +102,7 @@
             <option value="socks5">SOCKS5</option>
           </select>
           <select class="input" id="fCountry"></select>
+          <select class="input" id="fSite"></select>
         </div>
 
         <div class="table" id="table">
@@ -166,6 +167,17 @@
             <label class="wide"><span data-i18n="set.judge"></span> <input class="input" type="url" name="judgeUrl" /><small data-i18n="set.judgeHint"></small></label>
             <label class="check"><span class="switch"><input type="checkbox" name="sslTest" /><span></span></span> <span data-i18n="set.sslTest"></span></label>
             <label class="check"><span class="switch"><input type="checkbox" name="geo" /><span></span></span> <span data-i18n="set.geo"></span></label>
+          </fieldset>
+          <fieldset class="sites-box">
+            <legend data-i18n="set.siteTest"></legend>
+            <p class="wide muted" data-i18n="set.siteTestDesc"></p>
+            <label class="check"><span class="switch"><input type="checkbox" name="siteTest" /><span></span></span> <span data-i18n="set.siteTestOn"></span></label>
+            <div class="wide site-list" id="siteList"></div>
+            <div class="wide site-add">
+              <input class="input" id="siteAddUrl" data-i18n-ph="set.siteAddPh" />
+              <button type="button" class="btn" id="siteAddBtn"></button>
+            </div>
+            <small class="wide" data-i18n="set.siteTestNote"></small>
           </fieldset>
           <fieldset>
             <legend data-i18n="set.download"></legend>

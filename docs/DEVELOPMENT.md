@@ -92,7 +92,13 @@ behind a random per-install token, and the PAC script routes only that request t
    Measured on 2026-10-29 (Firefox and Chrome, Wikipedia + GitHub opened in the browser): of the proxies
    ProxyScout reported as connected, 71% opened both sites (39% before the load test and the site check).
    HTTP-only proxies (no HTTPS) opened none.
-3. **Location** – country from the bundled DB-IP Lite database (`lib/geoip.js`, refreshed with
+3. **Site test** (optional, on by default) – the 30 best usable proxies open each site in Settings →
+   Site test (`settings.sites`, built-ins in `lib/sites.js`). Chrome's PAC script sees only the host of
+   an HTTPS request, so the site hosts are routed through one proxy at a time with `hostMap`, all sites
+   in parallel (8 s timeout each); the time to the response headers is stored as `p.sites[url] = { ok, ms }`.
+   A redirect or any status below 400 counts as open. After connecting, the sites are measured again
+   through the active proxy.
+4. **Location** – country from the bundled DB-IP Lite database (`lib/geoip.js`, refreshed with
    `node tools/build-geo.mjs`); city and ISP of working proxies from ip-api.com (15 batch requests per
    minute on the free tier). Windows cannot draw flag emojis, so a small flag font is bundled.
 
@@ -220,6 +226,7 @@ extension/
   lib/firefox-shim.js    Firefox only: maps chrome.* to the promise-based browser.*
   lib/parse.js           list parser
   lib/sources.js         built-in sources
+  lib/sites.js           built-in sites for the site test, URL checks
   lib/geoip.js           offline IP → country lookup (data/ipv4-country.bin; Opera: .json)
   lib/sync.js            sync snapshot: build, merge, compress, chrome.storage.sync packing
   lib/drive.js           Google Drive appDataFolder client and OAuth helpers
@@ -236,6 +243,7 @@ tests/
   sync.test.mjs          sync snapshot, merge, quota, input validation, Drive client
   firefox.test.mjs       Firefox: PAC/JS decision parity, ProxyInfo, generated manifest
   opera.test.mjs         Opera: generated manifest, JSON country database
+  sites.test.mjs         site test: URL checks, site list, host routing
   e2e.mjs                end-to-end test in Chrome for Testing (needs puppeteer)
   e2e-firefox.mjs        end-to-end test in Firefox (needs selenium-webdriver)
   sync-e2e.mjs           two-browser sync test

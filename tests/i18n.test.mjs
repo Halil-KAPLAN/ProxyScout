@@ -35,7 +35,7 @@ test('koddaki tüm anahtarlar sözlükte var', () => {
   keys.add('status.httpOnly');
   for (const a of ['elite', 'anonymous', 'transparent']) keys.add('anon.' + a);
   for (const s of ['new', 'alive', 'dead']) keys.add('status.' + s);
-  for (const p of ['start', 'download', 'prepare', 'http', 'ssl', 'geo']) keys.add('phase.' + p);
+  for (const p of ['start', 'download', 'prepare', 'http', 'ssl', 'sites', 'geo']) keys.add('phase.' + p);
   for (const e of ['timeout', 'connect', 'cancelled', 'redirect', 'auth', 'invalid', 'modified', 'direct', 'slow']) keys.add('err.' + e);
   const missing = [...keys].filter((k) => !(k in MESSAGES.en));
   assert.deepEqual(missing, []);

@@ -48,6 +48,10 @@ traffic goes through it; one switch turns it off again.
 
   Proxies that pass only the HTTP test are listed separately under **HTTP only**: they cannot open HTTPS
   sites, so they are not counted as working. Proxies that fail several times in a row are moved to **Dead**.
+- **Site test:** the 30 best working proxies also try to open the sites you pick (YouTube, Discord,
+  Google, Instagram and X by default; add or remove sites under **Settings → Site test**). Each row shows
+  which sites opened and how fast, e.g. `YT 320 · DC ✗`, and the **Opens YouTube** filter lists only the
+  proxies that open that site.
 - **Country, city and flag** for every proxy (offline country database, city/ISP for working proxies).
 - **One-click connect** and **one switch** to turn it off. The toolbar icon shows the state: green
   connected, amber connecting, red not responding, grey off.
@@ -105,6 +109,8 @@ To use your own Google client (for example in a fork), see
 - Firefox: credentials of your own proxies are synced only after you grant the optional
   "authentication information" permission (Settings → Sync → **Sync now**).
 - While connected, list downloads go through the active proxy.
+- Chrome, Edge and Opera: while the site test runs, opening one of the listed sites in another tab may
+  go through the proxy being tested.
 - Deletions are not synced: a working proxy deleted on one device can come back from another device.
 
 ## Development

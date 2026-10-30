@@ -6,6 +6,7 @@ import {
 import { icon } from './lib/icons.js';
 import { formatProxy } from './lib/parse.js';
 import { sourceTypes, enabledTypes, sourceHome } from './lib/sources.js';
+import { siteInfo, siteList, normalizeSiteUrl, shortMs } from './lib/sites.js';
 import { IS_FIREFOX, credsSyncAllowed, requestCredsSync } from './lib/platform.js';
 
 const langSetting = await initLang();
@@ -21,6 +22,7 @@ const ui = {
   search: '',
   type: '',
   country: '',
+  site: '', // site filtresi: yalnızca bu siteyi açan proxy'ler
   sortKey: 'status',
   sortDir: 1,
   selected: new Set(),
@@ -66,6 +68,7 @@ setBtn('#btnDelete', 'trash', t('tb.delete'));
 setBtn('#btnMyIp', 'globe', t('myip'));
 setBtn('#srcDownload', 'download', t('src.download'));
 setBtn('#srcStop', 'stop', t('tb.stop'));
+setBtn('#siteAddBtn', 'plus', t('set.siteAdd'));
 setBtn('#srcAdd button', 'plus', t('src.add'));
 setBtn('#btnLog', 'terminal', t('log.btn'));
 $('#driveConnect').innerHTML = `<svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg><span>${esc(t('sync.google'))}</span>`;
@@ -98,6 +101,7 @@ const COLS = [
   { key: 'uptime', label: 'col.uptime' },
   { key: 'lastCheck', label: 'col.lastCheck' },
   { key: 'source', label: 'col.source' },
+  { key: 'sites', label: 'col.sites' },
   { key: 'act', label: '' },
 ];
 $('#thead').innerHTML = COLS.map((c) =>
@@ -131,6 +135,8 @@ const SORTS = {
   anon: (a, b) => nullLast(anonRank[a.anon], anonRank[b.anon], (x, y) => x - y),
   ssl: (a, b) => sslRank(a.ssl) - sslRank(b.ssl) || (a.sslMs ?? 1e9) - (b.sslMs ?? 1e9),
   latency: (a, b) => nullLast(a.latency, b.latency, (x, y) => x - y),
+  // Site filtresi seçiliyse o sitedeki süreye, değilse açılan site sayısına (eşitse ortalama süreye) göre.
+  sites: (a, b) => (ui.site ? siteMs(a, ui.site) - siteMs(b, ui.site) : siteScore(b) - siteScore(a)),
   country: (a, b) => nullLast(a.country, b.country, () => collator.compare(countryName(a), countryName(b))),
   uptime: (a, b) => nullLast(uptime(a), uptime(b), (x, y) => y - x),
   lastCheck: (a, b) => (b.lastCheck || 0) - (a.lastCheck || 0),
@@ -145,6 +151,7 @@ function computeVisible() {
     if (!cat.test(p, store.settings)) continue;
     if (ui.type && p.type !== ui.type) continue;
     if (ui.country && p.country !== ui.country) continue;
+    if (ui.site && !p.sites?.[ui.site]?.ok) continue;
     if (q && !`${p.host}:${p.port} ${p.country || ''} ${countryName(p)} ${p.city || ''} ${p.isp || ''} ${p.type}`.toLocaleLowerCase(locale()).includes(q)) continue;
     out.push(p);
   }
@@ -270,6 +277,7 @@ function rowHtml(p, i) {
     <div>${up == null ? '' : `<span class="upbar"><i><b style="width:${up}%"></b></i>${up}%</span>`}</div>
     <div class="muted">${p.lastCheck ? ago(p.lastCheck) : '—'}</div>
     <div class="muted">${esc(sourceName(p.source))}</div>
+    <div class="sites">${sitesHtml(p)}</div>
     <div class="act">${btn}</div>
   </div>`;
 }
@@ -441,6 +449,12 @@ async function deleteMode(what) {
 $('#search').addEventListener('input', (e) => ((ui.search = e.target.value), resort(), dataChanged()));
 $('#fType').addEventListener('change', (e) => ((ui.type = e.target.value), resort(), dataChanged()));
 $('#fCountry').addEventListener('change', (e) => ((ui.country = e.target.value), resort(), dataChanged()));
+$('#fSite').addEventListener('change', (e) => {
+  ui.site = e.target.value;
+  if (ui.site) (ui.sortKey = 'sites'), (ui.sortDir = 1);
+  resort();
+  dataChanged();
+});
 
 // İçe aktarma
 const dlg = $('#importDlg');
@@ -630,7 +644,75 @@ $('#srcReset').addEventListener('click', () => {
 
 // ---------------------------------------------------------------- ayarlar
 
+// ---------------------------------------------------------------- site testi
+
+const enabledSites = () => store.settings.sites || [];
+const siteMs = (p, u) => (p.sites?.[u]?.ok ? p.sites[u].ms : 1e9);
+function siteScore(p) {
+  const r = enabledSites().map((u) => p.sites?.[u]).filter(Boolean);
+  const ok = r.filter((x) => x.ok);
+  return ok.length * 1e5 - (ok.length ? ok.reduce((n, x) => n + x.ms, 0) / ok.length : 0);
+}
+
+// Tablodaki "Siteler" hücresi: her etkin site için kısa ad + süre ya da ✗; ayrıntı üzerine gelince.
+function sitesHtml(p) {
+  if (!p.sites) return '';
+  return enabledSites()
+    .filter((u) => p.sites[u])
+    .map((u) => {
+      const r = p.sites[u];
+      const i = siteInfo(u);
+      const tip = `${i.name}: ${r.ok ? r.ms + ' ms' : errorText(r.err)}`;
+      return `<span class="site ${r.ok ? latencyClass(r.ms) || 'ok' : 'bad'}" title="${esc(tip)}">${esc(i.short)} ${r.ok ? shortMs(r.ms) : '✗'}</span>`;
+    })
+    .join('');
+}
+
+function renderSiteFilter() {
+  const sel = $('#fSite');
+  const urls = enabledSites();
+  if (ui.site && !urls.includes(ui.site)) ui.site = '';
+  sel.innerHTML = `<option value="">${esc(t('filter.allSites'))}</option>` + urls.map((u) => `<option value="${esc(u)}">${esc(t('filter.worksOn', { site: siteInfo(u).name }))}</option>`).join('');
+  sel.value = ui.site;
+  sel.hidden = !store.settings.siteTest || !urls.length;
+}
+
+function renderSiteSettings() {
+  $('#siteList').innerHTML = siteList(enabledSites())
+    .map(
+      (s) => `<label class="site-chip ${s.enabled ? 'on' : ''}" title="${esc(s.url)}">
+        <input type="checkbox" data-site="${esc(s.url)}" ${s.enabled ? 'checked' : ''} /><b>${esc(s.short)}</b> ${esc(s.name)}
+        ${s.custom ? `<button type="button" class="x" data-site-del="${esc(s.url)}" title="${esc(t('set.siteDelete'))}">×</button>` : ''}
+      </label>`,
+    )
+    .join('');
+}
+
+const saveSites = (sites) => run('saveSettings', { settings: { sites } });
+$('#siteList').addEventListener('change', (e) => {
+  const u = e.target.dataset.site;
+  if (!u) return;
+  const cur = enabledSites().filter((x) => x !== u);
+  saveSites(e.target.checked ? [...cur, u] : cur);
+});
+$('#siteList').addEventListener('click', (e) => {
+  const u = e.target.closest('[data-site-del]')?.dataset.siteDel;
+  if (!u) return;
+  e.preventDefault();
+  saveSites(enabledSites().filter((x) => x !== u));
+});
+function addSite() {
+  const u = normalizeSiteUrl($('#siteAddUrl').value);
+  if (!u) return toast(t('toast.siteInvalid'), 'err');
+  if (!enabledSites().includes(u)) saveSites([...enabledSites(), u]);
+  $('#siteAddUrl').value = '';
+}
+$('#siteAddBtn').addEventListener('click', addSite);
+$('#siteAddUrl').addEventListener('keydown', (e) => e.key === 'Enter' && (e.preventDefault(), addSite()));
+
 function fillSettings() {
+  renderSiteSettings();
+  renderSiteFilter();
   const f = $('#settingsForm');
   for (const [k, v] of Object.entries(store.settings)) {
     const inp = f.elements[k];

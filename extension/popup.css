@@ -55,6 +55,9 @@ body { width: 380px; min-height: 480px; display: flex; flex-direction: column; }
 .tabs button { padding: 4px 7px; white-space: nowrap; }
 .item .m .ok { color: var(--ok); }
 .item .m .warn { color: var(--warn); }
+.item .m.sites { grid-column: 1; font: 11px var(--mono); }
+.item .m.sites .ok { color: var(--ok); }
+.item .m.sites .bad { color: var(--err); }
 #toggleWrap[data-state='wait'] input:checked + span { background: var(--warn); }
 #toggleWrap[data-state='bad'] input:checked + span { background: var(--err); }
 

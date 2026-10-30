@@ -2,6 +2,7 @@ import { initLang, applyI18n, locale } from './lib/i18n.js';
 import { createStore, send, run, toast, t, CATEGORIES, errorText, anonText, phaseText, countryName, flag, latencyClass, addr, ago, esc, connectWithFeedback } from './lib/ui.js';
 import { icon } from './lib/icons.js';
 import { IS_ANDROID } from './lib/platform.js';
+import { siteInfo, shortMs } from './lib/sites.js';
 
 if (IS_ANDROID) document.documentElement.classList.add('mobile');
 
@@ -119,10 +120,22 @@ function renderList() {
         <span class="lat ${busy ? '' : latencyClass(p.sslMs ?? p.latency)}">${busy ? '<span class="spin"></span>' : (p.sslMs ?? p.latency) != null ? (p.sslMs ?? p.latency) + ' ms' : ''}</span>
         <span class="m">${esc([p.type.toUpperCase(), loc(p), anonText(p.anon)].filter(Boolean).join(' · '))} · ${
           p.ssl === true ? `<span class="ok">HTTPS ✓</span>` : `<span class="warn" title="${esc(t('pop.httpOnlyHint'))}">${esc(t('pop.httpOnly'))}</span>`
-        }</span>
+        }</span>${sitesLine(p)}
       </div>`;
     })
     .join('');
+}
+
+// Site testi sonuçları: "YT 320 · DC ✗" (yalnızca ayarlarda açık siteler).
+function sitesLine(p) {
+  if (!p.sites || !store.settings.siteTest) return '';
+  const parts = (store.settings.sites || [])
+    .filter((u) => p.sites[u])
+    .map((u) => {
+      const r = p.sites[u];
+      return `<span class="${r.ok ? 'ok' : 'bad'}" title="${esc(siteInfo(u).name)}">${esc(siteInfo(u).short)} ${r.ok ? shortMs(r.ms) : '✗'}</span>`;
+    });
+  return parts.length ? `<span class="m sites">${parts.join(' · ')}</span>` : '';
 }
 
 $('#list').addEventListener('click', (e) => {
