@@ -139,7 +139,7 @@ ProxyScout downloads free proxy lists from dozens of sources, really tests every
 | `alarms` | Periodically checks whether the connected proxy still works (auto switch) and schedules sync. |
 | `webRequest`, `webRequestAuthProvider` | Supplies the username/password of private HTTP proxies the user adds when the proxy asks for authentication (`onAuthRequired`). Requests are not read, logged or modified. |
 | `identity` | Optional Google Drive sync: `launchWebAuthFlow` to let the user sign in with Google (scope: `drive.appdata` + email). |
-| Host permission `<all_urls>` | Downloads proxy lists from any list website the user enables or adds, and sends test requests through the proxies (test endpoints: httpbin.org, Cloudflare, ip-api.com, ipify). The extension does not inject scripts into or read the content of web pages. |
+| Host permission `<all_urls>` | Downloads proxy lists from any list website the user enables or adds, and sends test requests through the proxies (test endpoints: httpbin.org, Cloudflare, ip-api.com, ipify; with the optional site test, the sites the user picks in Settings). The extension does not inject scripts into or read the content of web pages. |
 
 ### Uzaktan kod / Remote code
 
