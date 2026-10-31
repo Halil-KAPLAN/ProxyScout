@@ -11,10 +11,11 @@
 </head>
 <body>
   <header class="top">
-    <div class="brand">
+    <!-- Logoya tıklamak proxy listesine (ana ekran) döner. -->
+    <a href="#" class="brand" id="brand">
       <img src="icons/brand48.png" alt="" />
       <div><b>ProxyScout</b><small data-i18n="brand.sub"></small></div>
-    </div>
+    </a>
     <!-- Yalnızca dar ekranda: Ayarlar ve Kaynaklar buradan açılır (yan menüdeki bağlantılar gizlenir). -->
     <button type="button" class="btn m-only" id="btnMobileSettings" data-i18n-title="nav.settings"></button>
 
@@ -94,20 +95,24 @@
             </div>
           </div>
           <div class="tb-fill"></div>
-          <input class="input search" id="search" type="search" data-i18n-ph="search.ph" />
-          <select class="input" id="fType">
-            <option value="" data-i18n="filter.allTypes"></option>
-            <option value="http">HTTP</option>
-            <option value="socks4">SOCKS4</option>
-            <option value="socks5">SOCKS5</option>
-          </select>
-          <select class="input" id="fCountry"></select>
-          <select class="input" id="fSite"></select>
+          <!-- Dar ekranda arama gizlenir; tür, ülke ve site filtreleri tablo başlığındaki sütunlara taşınır. -->
+          <div class="tb-filters" id="tbFilters">
+            <input class="input search" id="search" type="search" data-i18n-ph="search.ph" />
+            <select class="input" id="fType">
+              <option value="" data-i18n="filter.allTypes"></option>
+              <option value="http">HTTP</option>
+              <option value="socks4">SOCKS4</option>
+              <option value="socks5">SOCKS5</option>
+            </select>
+            <select class="input" id="fCountry"></select>
+            <select class="input" id="fSite"></select>
+          </div>
         </div>
 
         <div class="table" id="table">
-          <div class="thead" id="thead"></div>
+          <!-- Başlık kaydırma alanının içinde (üste yapışık): dar ekranda sütunlarla birlikte yana kayar. -->
           <div class="tbody" id="tbody">
+            <div class="thead" id="thead"></div>
             <div class="spacer" id="spacer"></div>
             <div class="rows" id="rows"></div>
           </div>
@@ -184,8 +189,16 @@
             <label class="check"><span class="switch"><input type="checkbox" name="autoTestAfterDownload" /><span></span></span> <span data-i18n="set.autoTest"></span></label>
             <label><span data-i18n="set.maxPerSource"></span> <input class="input" type="number" name="maxPerSource" min="0" /></label>
           </fieldset>
+          <!-- Dar ekranda araç çubuğundaki "İçe aktar" buraya taşınır. -->
+          <fieldset class="m-only">
+            <legend data-i18n="imp.title"></legend>
+            <p class="wide muted" data-i18n-html="imp.desc"></p>
+            <div class="wide"><button type="button" class="btn" id="btnImportM"></button></div>
+          </fieldset>
           <fieldset>
             <legend data-i18n="set.connection"></legend>
+            <!-- Dar ekranda üst çubuktaki "Otomatik geçiş" buraya taşınır. -->
+            <label class="check m-only" data-i18n-title="auto.title"><span class="switch"><input type="checkbox" id="autoSwitchM" /><span></span></span> <span data-i18n="auto.label"></span></label>
             <label><span data-i18n="set.watch"></span> <input class="input" type="number" name="watchMinutes" min="1" max="60" /></label>
             <label><span data-i18n="set.recheck"></span> <input class="input" type="number" name="recheckMinutes" min="0" max="1440" /></label>
             <label class="wide"><span data-i18n-html="set.bypass"></span>

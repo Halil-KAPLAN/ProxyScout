@@ -19,6 +19,7 @@ const P = {
   plug: '<path d="M9 7V3m6 4V3M6 7h12v4a6 6 0 0 1-12 0zm6 10v4"/>',
   external: '<path d="M14 4h6v6m0-6-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
   chevron: '<path d="m6 9 6 6 6-6"/>',
+  filter: '<path d="M4 5h16l-6 7.5V19l-4-2v-4.5z"/>',
   shield: '<path d="M12 3 4 6v6c0 5 3.4 8.3 8 9 4.6-.7 8-4 8-9V6z"/>',
   terminal: '<path d="m5 8 4 4-4 4m6 0h8"/>',
   upload: '<path d="M12 21V9m0 0-5 5m5-5 5 5M4 5h16"/>',

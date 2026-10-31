@@ -58,11 +58,13 @@ function setBtn(sel, ic, text) {
   const b = typeof sel === 'string' ? $(sel) : sel;
   b.innerHTML = icon(ic) + `<span>${esc(text)}</span>`;
 }
-setBtn('#btnDownload', 'download', t('tb.download'));
+// Dar ekranda kısa etiket ("İndir ve test et") görünür.
+$('#btnDownload').innerHTML = icon('download') + `<span class="l-long">${esc(t('tb.download'))}</span><span class="l-short">${esc(t('pop.dl'))}</span>`;
 setBtn('#btnTest', 'play', t('tb.test'));
 $('#btnTest').insertAdjacentHTML('beforeend', icon('chevron'));
 setBtn('#btnStop', 'stop', t('tb.stop'));
 setBtn('#btnImport', 'upload', t('tb.import'));
+setBtn('#btnImportM', 'upload', t('tb.import'));
 setBtn('#btnCopy', 'copy', t('tb.copy'));
 setBtn('#btnDelete', 'trash', t('tb.delete'));
 setBtn('#btnMyIp', 'globe', t('myip'));
@@ -107,8 +109,46 @@ const COLS = [
 $('#thead').innerHTML = COLS.map((c) =>
   c.key === 'act'
     ? `<div class="act"><button class="btn ghost sm resort" id="btnResort" title="${esc(t('sort.resortTitle'))}">${icon('refresh')}<span>${esc(t('sort.resort'))}</span></button></div>`
-    : `<div data-sort="${c.key}" title="${c.label ? esc(t('sort.title', { c: t(c.label) })) : ''}">${c.label ? esc(t(c.label)) : ''}</div>`,
+    : `<div data-sort="${c.key}" title="${c.label ? esc(t('sort.title', { c: t(c.label) })) : ''}"><span class="hl">${c.label ? esc(t(c.label)) : ''}</span>${['type', 'country', 'sites'].includes(c.key) ? `<span class="hf">${icon('filter')}</span>` : ''}</div>`,
 ).join('');
+
+// Dar ekranda tür, ülke ve site filtreleri sütun başlıklarındaki filtre düğmesine taşınır: düğmeye dokunmak seçim
+// listesini açar (seçim kutusu düğmenin üstünde görünmez durur), başlığın kendisi sıralar. Geniş ekranda araç çubuğuna döner.
+const narrow = matchMedia('(max-width: 760px)');
+const HEAD_FILTERS = [
+  ['type', '#fType'],
+  ['country', '#fCountry'],
+  ['sites', '#fSite'],
+];
+const headCell = (k) => $(`#thead [data-sort="${k}"]`);
+function placeFilters() {
+  for (const [k, sel] of HEAD_FILTERS) (narrow.matches ? headCell(k).querySelector('.hf') : $('#tbFilters')).append($(sel));
+  renderHeadFilters();
+}
+narrow.addEventListener('change', placeFilters);
+
+// Filtre seçiliyse başlıkta sütun adı yerine seçilen değer görünür.
+function renderHeadFilters() {
+  const value = { type: ui.type.toUpperCase(), country: ui.country && flag(ui.country), sites: ui.site && siteInfo(ui.site).short };
+  for (const [k] of HEAD_FILTERS) {
+    const on = narrow.matches && !!value[k];
+    headCell(k).querySelector('.hl').textContent = on ? value[k] : t(COLS.find((c) => c.key === k).label);
+    headCell(k).classList.toggle('filtered', on);
+  }
+}
+placeFilters();
+
+// Yana kayan alanlarda devamı olan kenarı işaretler (CSS soluklaşma ve ok gösterir).
+const scrollers = ['.side', '.toolbar', '#tbody'].map((s) => $(s));
+function updateScrollHints() {
+  for (const el of scrollers) {
+    el.classList.toggle('more-l', el.scrollLeft > 2);
+    el.classList.toggle('more-r', el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+  }
+}
+for (const el of scrollers) el.addEventListener('scroll', updateScrollHints, { passive: true });
+new ResizeObserver(updateScrollHints).observe(document.body);
+
 $('#btnResort').addEventListener('click', (e) => {
   e.stopPropagation();
   resort();
@@ -124,7 +164,8 @@ const ipNum = (h) => {
 const statusRank = (p) => (p.checking ? 1 : { alive: 0, new: 2, dead: 3 }[p.status] ?? 4);
 const anonRank = { elite: 0, anonymous: 1, transparent: 2 };
 const sslRank = (v) => (v === true ? 0 : v === false ? 2 : 1);
-const nullLast = (a, b, f) => (a == null && b == null ? 0 : a == null ? 1 : b == null ? -1 : f(a, b));
+// Boş değerler ±Infinity döner; computeVisible bunları sıralama yönüyle çevirmez, böylece ters sırada da en sonda kalırlar.
+const nullLast = (a, b, f) => (a == null && b == null ? 0 : a == null ? Infinity : b == null ? -Infinity : f(a, b));
 const collator = new Intl.Collator(locale());
 
 const SORTS = {
@@ -156,7 +197,10 @@ function computeVisible() {
     out.push(p);
   }
   const f = SORTS[ui.sortKey] || SORTS.status;
-  const cmp = (a, b) => f(a, b) * ui.sortDir || SORTS.status(a, b);
+  const cmp = (a, b) => {
+    const r = f(a, b);
+    return (Number.isFinite(r) ? r * ui.sortDir : r) || SORTS.status(a, b);
+  };
   if (!ui.order) out.sort(cmp);
   else {
     // Önceki sırayı koru; listeye yeni girenler sıralı biçimde sona eklenir.
@@ -178,6 +222,8 @@ function dataChanged() {
     renderCountries();
     renderRows();
     renderCounts();
+    renderHeadFilters();
+    updateScrollHints();
   });
 }
 
@@ -219,6 +265,10 @@ function showView(v) {
 // Dar ekran: çark Ayarlar'ı açar (ayarlardayken listeye döner); üstteki sekmeler Ayarlar ile Kaynaklar arasında geçer.
 const inSettings = () => ui.view === 'settings' || ui.view === 'sources';
 $('#btnMobileSettings').addEventListener('click', () => showView(inSettings() ? 'list' : 'settings'));
+$('#brand').addEventListener('click', (e) => {
+  e.preventDefault();
+  showView('list');
+});
 $('#mTabs').addEventListener('click', (e) => {
   const b = e.target.closest('[data-mview]');
   if (b) showView(b.dataset.mview);
@@ -314,10 +364,13 @@ tbody.addEventListener('scroll', () => requestAnimationFrame(renderRows), { pass
 window.addEventListener('resize', () => requestAnimationFrame(renderRows));
 
 $('#thead').addEventListener('click', (e) => {
+  if (e.target.closest('select')) return; // dar ekranda başlıktaki filtre
   const k = e.target.closest('[data-sort]')?.dataset.sort;
   if (!k || k === 'act') return;
-  if (ui.sortKey === k) ui.sortDir *= -1;
-  else (ui.sortKey = k), (ui.sortDir = 1);
+  // Başlığa her tıklama: sütunun sırası → ters sıra → varsayılan sıra (durum, sonra gecikme).
+  if (ui.sortKey !== k) (ui.sortKey = k), (ui.sortDir = 1);
+  else if (ui.sortDir === 1) ui.sortDir = -1;
+  else (ui.sortKey = 'status'), (ui.sortDir = 1);
   resort();
   dataChanged();
 });
@@ -459,6 +512,7 @@ $('#fSite').addEventListener('change', (e) => {
 // İçe aktarma
 const dlg = $('#importDlg');
 $('#btnImport').addEventListener('click', () => dlg.showModal());
+$('#btnImportM').addEventListener('click', () => dlg.showModal());
 dlg.addEventListener('close', () => {
   if (dlg.returnValue !== 'ok') return;
   const f = $('#importForm');
@@ -485,6 +539,7 @@ $('#mainToggle').addEventListener('change', async (e) => {
   }
 });
 $('#autoSwitch').addEventListener('change', (e) => run('setAutoSwitch', { value: e.target.checked }));
+$('#autoSwitchM').addEventListener('change', (e) => run('setAutoSwitch', { value: e.target.checked }));
 $('#btnMyIp').addEventListener('click', async () => {
   const b = $('#btnMyIp');
   b.disabled = true;
@@ -507,7 +562,7 @@ function renderHeader() {
   // Tek kontrol: bağlıyken ya da bağlanırken açık; kapatmak bağlantıyı keser (bağlanmayı da iptal eder).
   $('#mainToggle').checked = on || !!cp;
   $('#toggleLabel').textContent = t(on || cp ? 'toggle.on' : 'toggle.off');
-  $('#autoSwitch').checked = !!a.autoSwitch;
+  $('#autoSwitch').checked = $('#autoSwitchM').checked = !!a.autoSwitch;
   const conn = $('#conn');
   conn.classList.toggle('connecting', !!cp);
   const bad = on && (a.failed || p.status === 'dead');
@@ -531,7 +586,9 @@ function renderHeader() {
 
 function renderJob() {
   const j = store.job;
+  document.body.classList.toggle('job-on', !!j); // dar ekranda alt çubuk iş sürerken ilerlemeyi, yoksa sayıları gösterir
   $('#btnStop').hidden = !j;
+  requestAnimationFrame(updateScrollHints); // "Durdur" araç çubuğunu genişletebilir
   $('#btnDownload').disabled = !!j;
   // Kaynaklar sayfasında da indirme/test sürerken "İndir" yerine "Durdur" görünür.
   $('#srcDownload').hidden = !!j;
@@ -553,7 +610,7 @@ function renderJob() {
 function renderCounts() {
   let alive = 0, dead = 0;
   for (const p of store.proxies.values()) isUsable(p) ? alive++ : p.status === 'dead' && dead++;
-  $('#counts').innerHTML = `<span>${t('counts.total')} <b>${num(store.proxies.size)}</b></span><span class="ok">${t('counts.alive')} <b>${num(alive)}</b></span><span class="bad">${t('counts.dead')} <b>${num(dead)}</b></span><span>${t('counts.visible')} <b>${num(ui.visible.length)}</b></span>${ui.selected.size ? `<span>${t('counts.selected')} <b>${num(ui.selected.size)}</b></span>` : ''}`;
+  $('#counts').innerHTML = `<span class="total">${t('counts.total')} <b>${num(store.proxies.size)}</b></span><span class="ok">${t('counts.alive')} <b>${num(alive)}</b></span><span class="bad">${t('counts.dead')} <b>${num(dead)}</b></span><span>${t('counts.visible')} <b>${num(ui.visible.length)}</b></span>${ui.selected.size ? `<span>${t('counts.selected')} <b>${num(ui.selected.size)}</b></span>` : ''}`;
 }
 
 // ---------------------------------------------------------------- kayıt paneli
