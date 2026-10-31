@@ -68,7 +68,7 @@ try {
     if (line !== last && (!j || j.phase !== last.split(' ')[0])) console.log(`[${Math.round((Date.now() - t0) / 1000)}s]`, line);
     last = line;
     if (!j) break;
-    if (Date.now() - t0 > 8 * 60000) throw new Error('zaman aşımı');
+    if (Date.now() - t0 > 20 * 60000) throw new Error('zaman aşımı'); // site testi dahil
   }
 
   const s = await cmd('state');
