@@ -327,7 +327,7 @@ function rowHtml(p, i) {
     <div>${up == null ? '' : `<span class="upbar"><i><b style="width:${up}%"></b></i>${up}%</span>`}</div>
     <div class="muted">${p.lastCheck ? ago(p.lastCheck) : '—'}</div>
     <div class="muted">${esc(sourceName(p.source))}</div>
-    <div class="sites">${sitesHtml(p)}</div>
+    <div class="sites"><div class="sl">${sitesHtml(p)}</div></div>
     <div class="act">${btn}</div>
   </div>`;
 }
@@ -344,6 +344,7 @@ function renderRows() {
   for (let i = from; i < to; i++) html += rowHtml(ui.visible[i], i);
   // Değişmeyen satırları yeniden çizme: aksi halde iki tıklama arasında DOM yenilenip çift tıklama kaçabilir.
   if (html !== lastRowsHtml) rowsEl.innerHTML = lastRowsHtml = html;
+  updateSiteCells();
 
   const empty = $('#empty');
   empty.hidden = n > 0;
@@ -375,7 +376,76 @@ $('#thead').addEventListener('click', (e) => {
   dataChanged();
 });
 
+// Siteler hücresi sığmazsa yana kayar: fareyle sürükleyerek, Shift+tekerlekle ya da kenardaki oka tıklayarak;
+// dokunmatikte parmakla. Satırlar yeniden çizilince konum kaybolmasın diye proxy başına saklanır.
+const sitesX = new Map();
+function siteHint(sl) {
+  const over = sl.scrollWidth > sl.clientWidth + 1;
+  const c = sl.parentElement.classList;
+  c.toggle('ovf', over);
+  c.toggle('more-l', over && sl.scrollLeft > 1);
+  c.toggle('more-r', over && sl.scrollLeft + sl.clientWidth < sl.scrollWidth - 1);
+}
+function updateSiteCells() {
+  for (const sl of rowsEl.querySelectorAll('.sl')) {
+    const x = sitesX.get(sl.closest('.row').dataset.id);
+    if (x != null && sl.scrollLeft !== x) sl.scrollLeft = x;
+    siteHint(sl);
+  }
+}
+rowsEl.addEventListener(
+  'scroll',
+  (e) => {
+    const sl = e.target;
+    if (!sl.classList?.contains('sl')) return;
+    sitesX.set(sl.closest('.row').dataset.id, sl.scrollLeft);
+    siteHint(sl);
+  },
+  { capture: true, passive: true },
+);
+
+let siteDrag = null;
+let skipClick = false;
+const siteCell = (id) => rowsEl.querySelector(`.row[data-id="${CSS.escape(id)}"] .sl`);
+rowsEl.addEventListener('pointerdown', (e) => {
+  const cell = e.target.closest('.sites.ovf');
+  if (!cell || e.pointerType !== 'mouse' || e.button !== 0) return;
+  siteDrag = { id: cell.parentElement.dataset.id, x: e.clientX, left: cell.firstElementChild.scrollLeft, moved: false };
+});
+document.addEventListener('pointermove', (e) => {
+  if (!siteDrag) return;
+  const dx = e.clientX - siteDrag.x;
+  if (!siteDrag.moved && Math.abs(dx) < 4) return;
+  siteDrag.moved = true;
+  document.body.classList.add('grabbing');
+  const sl = siteCell(siteDrag.id); // test sürerken satır yeniden çizilmiş olabilir
+  if (sl) sl.scrollLeft = siteDrag.left - dx;
+});
+document.addEventListener('pointerup', () => {
+  if (!siteDrag) return;
+  if (siteDrag.moved) {
+    skipClick = true; // sürükleme satırı seçmesin
+    setTimeout(() => (skipClick = false));
+    lastDown = { id: null, t: 0 }; // iki hızlı sürükleme çift tık sayılıp bağlanmasın
+  }
+  siteDrag = null;
+  document.body.classList.remove('grabbing');
+});
+// Kenardaki ‹ › oka tıklamak hücreyi bir sayfa kaydırır.
+function siteArrow(e) {
+  const cell = e.target.closest('.sites.ovf');
+  if (!cell) return 0;
+  const r = cell.getBoundingClientRect();
+  return cell.classList.contains('more-r') && e.clientX > r.right - 22 ? 1 : cell.classList.contains('more-l') && e.clientX < r.left + 22 ? -1 : 0;
+}
+function siteArrowClick(e) {
+  const dir = siteArrow(e);
+  if (dir) e.target.closest('.sites').firstElementChild.scrollBy({ left: dir * (e.target.closest('.sites').clientWidth - 40), behavior: 'smooth' });
+  return !!dir;
+}
+
 rowsEl.addEventListener('click', (e) => {
+  if (skipClick || siteArrowClick(e)) return;
   const row = e.target.closest('.row');
   if (!row) return;
   const p = store.proxies.get(row.dataset.id);
@@ -403,7 +473,7 @@ rowsEl.addEventListener('click', (e) => {
 let lastDown = { id: null, t: 0 };
 rowsEl.addEventListener('mousedown', (e) => {
   const row = e.target.closest('.row');
-  if (!row || e.button !== 0 || e.target.closest('button')) return;
+  if (!row || e.button !== 0 || e.target.closest('button') || siteArrow(e)) return;
   const now = performance.now();
   if (lastDown.id === row.dataset.id && now - lastDown.t < 450) {
     lastDown = { id: null, t: 0 };
@@ -737,8 +807,8 @@ function renderSiteFilter() {
 function renderSiteSettings() {
   $('#siteList').innerHTML = siteList(enabledSites())
     .map(
-      (s) => `<label class="site-chip ${s.enabled ? 'on' : ''}" title="${esc(s.url)}">
-        <input type="checkbox" data-site="${esc(s.url)}" ${s.enabled ? 'checked' : ''} /><b>${esc(s.short)}</b> ${esc(s.name)}
+      (s) => `<label class="site-chip ${s.enabled ? 'on' : ''}" data-url="${esc(s.url)}" title="${esc(s.url + (s.enabled ? ' · ' + t('set.siteDrag') : ''))}">
+        ${s.enabled ? `<span class="grip">${icon('grip')}</span>` : ''}<input type="checkbox" data-site="${esc(s.url)}" ${s.enabled ? 'checked' : ''} /><b>${esc(s.short)}</b> ${esc(s.name)}
         ${s.custom ? `<button type="button" class="x" data-site-del="${esc(s.url)}" title="${esc(t('set.siteDelete'))}">×</button>` : ''}
       </label>`,
     )
@@ -758,6 +828,45 @@ $('#siteList').addEventListener('click', (e) => {
   e.preventDefault();
   saveSites(enabledSites().filter((x) => x !== u));
 });
+// Açık siteler sürüklenerek sıralanır (fareyle çipin her yerinden, dokunmatikte ⠿ tutamacından; sayfa kaydırması bozulmasın).
+// Bu sıra tablodaki Siteler sütununda ve açılır penceredeki satırda da kullanılır.
+let chipDrag = null;
+$('#siteList').addEventListener('pointerdown', (e) => {
+  const chip = e.target.closest('.site-chip.on');
+  if (!chip || e.button !== 0 || e.target.closest('.x')) return;
+  if (e.pointerType !== 'mouse' && !e.target.closest('.grip')) return;
+  chipDrag = { chip, id: e.pointerId, x: e.clientX, y: e.clientY, moved: false };
+});
+document.addEventListener('pointermove', (e) => {
+  const d = chipDrag;
+  if (!d || e.pointerId !== d.id) return;
+  if (!d.moved) {
+    if (Math.hypot(e.clientX - d.x, e.clientY - d.y) < 5) return;
+    d.moved = true;
+    d.chip.classList.add('dragging');
+    document.body.classList.add('grabbing');
+  }
+  const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.site-chip.on');
+  if (!over || over === d.chip) return;
+  const r = over.getBoundingClientRect();
+  over[e.clientX > r.left + r.width / 2 ? 'after' : 'before'](d.chip);
+});
+function endChipDrag(e) {
+  const d = chipDrag;
+  if (!d || e.pointerId !== d.id) return;
+  chipDrag = null;
+  if (!d.moved) return;
+  d.chip.classList.remove('dragging');
+  document.body.classList.remove('grabbing');
+  // Bırakınca gelen tıklama kutuyu açıp kapatmasın.
+  const stop = (ev) => (ev.preventDefault(), ev.stopPropagation());
+  window.addEventListener('click', stop, { capture: true, once: true });
+  setTimeout(() => window.removeEventListener('click', stop, { capture: true }));
+  const order = [...$('#siteList').querySelectorAll('.site-chip.on')].map((c) => c.dataset.url);
+  if (order.join() !== enabledSites().join()) saveSites(order);
+}
+document.addEventListener('pointerup', endChipDrag);
+document.addEventListener('pointercancel', endChipDrag);
 function addSite() {
   const u = normalizeSiteUrl($('#siteAddUrl').value);
   if (!u) return toast(t('toast.siteInvalid'), 'err');

@@ -56,12 +56,12 @@ export function siteInfo(url) {
   return { url, name: host, short: base.slice(0, 3).toUpperCase(), custom: true };
 }
 
-// Ayarlar ekranı için: hazır siteler (açık/kapalı) ve kullanıcının eklediği siteler (hep açık).
+// Ayarlar ekranı için: önce açık siteler kullanıcının sırasıyla (tabloda da bu sırayla görünür), sonra kapalı hazır siteler.
 export function siteList(enabled = []) {
   const on = new Set(enabled);
   return [
-    ...BUILTIN_SITES.map((s) => ({ ...s, enabled: on.has(s.url) })),
-    ...enabled.filter((u) => !BUILTIN_SITES.some((s) => s.url === u)).map((u) => ({ ...siteInfo(u), enabled: true })),
+    ...enabled.map((u) => ({ ...siteInfo(u), enabled: true })),
+    ...BUILTIN_SITES.filter((s) => !on.has(s.url)).map((s) => ({ ...s, enabled: false })),
   ];
 }
 

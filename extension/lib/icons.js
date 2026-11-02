@@ -24,6 +24,7 @@ const P = {
   terminal: '<path d="m5 8 4 4-4 4m6 0h8"/>',
   upload: '<path d="M12 21V9m0 0-5 5m5-5 5 5M4 5h16"/>',
   bolt: '<path d="M13 3 5 14h6l-1 7 8-11h-6z"/>',
+  grip: '<path d="M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01"/>',
 };
 
 export function icon(name, cls = '') {

@@ -252,7 +252,19 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .app-version { margin-top: 4px; font: 12px var(--mono); }
 
 /* Site testi: tablodaki küçük rozetler ve Ayarlar'daki site listesi */
-.row .sites { display: flex; gap: 4px; overflow: hidden; }
+/* Sığmayan rozetler yana kayar (.sl); devamı olan kenar soluklaşır ve ‹ › oku çıkar (oka tıklamak kaydırır). */
+.row .sites { position: relative; }
+.sites .sl { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; user-select: none; }
+.sites .sl::-webkit-scrollbar { display: none; }
+.sites.ovf { cursor: grab; }
+body.grabbing, body.grabbing * { cursor: grabbing !important; }
+.sites.more-r .sl { mask-image: linear-gradient(to right, #000 calc(100% - 30px), transparent calc(100% - 6px)); }
+.sites.more-l .sl { mask-image: linear-gradient(to left, #000 calc(100% - 30px), transparent calc(100% - 6px)); }
+.sites.more-l.more-r .sl { mask-image: linear-gradient(to right, transparent 6px, #000 30px, #000 calc(100% - 30px), transparent calc(100% - 6px)); }
+.sites::before, .sites::after { position: absolute; top: 0; bottom: 0; width: 18px; display: none; align-items: center; justify-content: center; font: 700 17px/1 var(--sans); color: var(--text); cursor: pointer; }
+.sites::before { content: '‹'; left: 0; }
+.sites::after { content: '›'; right: 0; }
+.sites.more-l::before, .sites.more-r::after { display: flex; }
 .site { flex: none; padding: 1px 5px; border-radius: 5px; font: 600 10.5px var(--mono); background: var(--bg-2); color: var(--muted); white-space: nowrap; }
 .site.ok, .site.fast { color: var(--ok); background: var(--ok-soft); }
 .site.mid { color: var(--warn); background: var(--warn-soft); }
@@ -261,6 +273,10 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .settings label.site-chip { flex-direction: row; align-items: center; gap: 6px; padding: 4px 8px; border: 1px solid var(--line-2); border-radius: 8px; background: var(--bg-2); color: var(--muted); cursor: pointer; font-size: 12.5px; }
 .settings label.site-chip.on { color: var(--text); border-color: color-mix(in srgb, var(--accent-2) 55%, var(--line-2)); background: var(--blue-soft); }
 .site-chip input { margin: 0; accent-color: var(--accent-2); }
+.settings label.site-chip.on { user-select: none; }
+.site-chip .grip { display: flex; padding: 5px 2px; margin: -5px -3px -5px -5px; color: var(--faint); cursor: grab; touch-action: none; }
+.site-chip .grip svg { width: 14px; height: 14px; stroke-width: 3; }
+.settings label.site-chip.dragging { opacity: .45; border-style: dashed; }
 .site-chip b { font: 600 11px var(--mono); }
 .site-chip .x { border: 0; background: none; color: var(--err); cursor: pointer; font-size: 15px; line-height: 1; padding: 0 0 0 2px; }
 .site-add { display: flex; gap: 8px; }
