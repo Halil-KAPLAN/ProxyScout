@@ -14,6 +14,14 @@ export const IS_ANDROID = /\bAndroid\b/.test(navigator.userAgent);
 // Firefox for Android'de storage.sync vardır ama Mozilla hesabıyla eşitlenmez; senkron seçeneği gösterilmez.
 export const HAS_BROWSER_SYNC = !!chrome.storage?.sync && !(IS_FIREFOX && IS_ANDROID);
 
+// Eklentinin bu tarayıcıdaki mağaza sayfası (değerlendirme bağlantısı için). Opera mağazası henüz yayında değil;
+// Opera kullanıcıları eklentiyi Chrome Web Mağazası'ndan kurar.
+export function storeReviewUrl() {
+  if (IS_FIREFOX) return 'https://addons.mozilla.org/firefox/addon/proxyscout/reviews/';
+  if (/\bEdg\//.test(navigator.userAgent)) return 'https://microsoftedge.microsoft.com/addons/detail/fmgnnkkdafjkkdfbohbgcgpblondogon';
+  return 'https://chromewebstore.google.com/detail/dldogmkmofnbapihicpkholeldcipmik/reviews';
+}
+
 // Google Drive girişi identity.launchWebAuthFlow ister; Firefox for Android'de bu API yoktur.
 export const HAS_WEB_AUTH = typeof chrome.identity?.launchWebAuthFlow === 'function';
 

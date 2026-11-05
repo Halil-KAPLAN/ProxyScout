@@ -888,6 +888,15 @@ async function verifyRoute() {
 
 let connectSeq = 0;
 
+// Değerlendirme notu için: başarılı bağlantı sayısı ve ilk kullanım zamanı (yalnızca bu cihazda, hiçbir yere gönderilmez).
+// Yönetici sayfası bunlara bakıp yeterince kullanıldıysa bir kez sönük bir not gösterir (bkz. manager.js rateNote).
+async function countConnect() {
+  try {
+    const d = await chrome.storage.local.get(['rateConnects', 'rateFirst']);
+    await chrome.storage.local.set({ rateConnects: (d.rateConnects || 0) + 1, rateFirst: d.rateFirst || Date.now() });
+  } catch {}
+}
+
 // Proxy'ye bağlan: ayarı hemen uygula, ardından bağlantıyı doğrula (arayüz bu sürede "Bağlanıyor" gösterir).
 async function connect(id, { verify = true } = {}) {
   const p = S.proxies.get(id);
@@ -919,6 +928,7 @@ async function connect(id, { verify = true } = {}) {
       touch(p);
       scheduleSave();
       log('ok', 'log.connected', { ...base, country: p.country || '', ms: r.ms });
+      countConnect();
       // Bağlı proxy'nin site sonuçlarını tazele (tüm trafik zaten bu proxy'den geçiyor; beklenmez).
       if (S.settings.siteTest && siteUrls().length && !S.job && !onlyList())
         probeSites(siteUrls()).then((sites) => {

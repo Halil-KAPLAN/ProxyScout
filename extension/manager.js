@@ -7,7 +7,7 @@ import { icon } from './lib/icons.js';
 import { formatProxy } from './lib/parse.js';
 import { sourceTypes, enabledTypes, sourceHome } from './lib/sources.js';
 import { siteInfo, siteList, normalizeSiteUrl, shortMs } from './lib/sites.js';
-import { IS_FIREFOX, credsSyncAllowed, requestCredsSync } from './lib/platform.js';
+import { IS_FIREFOX, credsSyncAllowed, requestCredsSync, storeReviewUrl } from './lib/platform.js';
 
 const langSetting = await initLang();
 if (IS_FIREFOX) document.querySelector('[data-i18n="set.syncChrome"]')?.setAttribute('data-i18n', 'set.syncFirefox');
@@ -81,6 +81,22 @@ navSources.innerHTML = icon('source') + `<span>${t('nav.sources')}</span><span c
 navSettings.innerHTML = icon('gear') + `<span>${t('nav.settings')}</span>`;
 $('#btnMobileSettings').innerHTML = icon('gear');
 $('#appVersion').textContent = t('set.version', { v: chrome.runtime.getManifest().version });
+$('#rateLink').href = storeReviewUrl();
+
+// Değerlendirme notu: hiçbir pencere ya da bildirim açmaz. Eklenti en az 3 gündür kullanılıyor ve 10 kez başarıyla
+// bağlanılmışsa kenar çubuğunun altında tek satır, sönük bir bağlantı görünür. Tıklanınca ya da × ile bir daha çıkmaz.
+// (Ayarlar'daki "Mağazada değerlendir" bağlantısı ise hep oradadır.)
+chrome.storage.local.get(['rateConnects', 'rateFirst', 'rateDone']).then((d) => {
+  if (d.rateDone || (d.rateConnects || 0) < 10 || !d.rateFirst || Date.now() - d.rateFirst < 3 * 864e5) return;
+  const el = $('#rateNote');
+  el.innerHTML = `<a href="${esc(storeReviewUrl())}" target="_blank" rel="noreferrer">${esc(t('rate.note'))}</a><button type="button" class="x" title="${esc(t('rate.hide'))}" aria-label="${esc(t('rate.hide'))}">×</button>`;
+  el.hidden = false;
+  el.addEventListener('click', (e) => {
+    if (!e.target.closest('a, .x')) return;
+    chrome.storage.local.set({ rateDone: true }).catch(() => {});
+    el.hidden = true;
+  });
+}).catch(() => {});
 
 const LANG_OPTIONS = () => [['auto', t('set.langAuto')], ['tr', 'Türkçe'], ['en', 'English']];
 $('#langSelect').innerHTML = LANG_OPTIONS().map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join('');
