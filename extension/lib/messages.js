@@ -101,6 +101,7 @@ const tr = {
   'log.stopping': 'Durduruluyor…',
   'log.deleted': '{n} proxy silindi.',
   'log.markedDead': "{n} proxy elle Ölüler'e taşındı.",
+  'log.shortcutFail': "Kısayolla açılamadı: {err}",
   'log.webrtcFail': "WebRTC koruması uygulanamadı: {err}",
   'log.imported': '{n} proxy içe aktarıldı.',
   'log.jobDone': '{label} tamamlandı ({s} sn).',
@@ -158,6 +159,7 @@ const tr = {
   'nav.settings': 'Ayarlar',
   'side.realIp': 'Gerçek IP',
   'side.hint': 'Çift tık: bağlan · Del: sil · Ctrl+A: tümünü seç',
+  'side.toggleKey': "{key}: proxy aç/kapat",
   'side.otherExt': '⚠ Proxy ayarları başka bir eklentinin kontrolünde.',
 
   // Araç çubuğu
@@ -476,6 +478,7 @@ const en = {
   'log.stopping': 'Stopping…',
   'log.deleted': '{n} proxies deleted.',
   'log.markedDead': '{n} proxies moved to Dead by hand.',
+  'log.shortcutFail': "Could not turn on with the shortcut: {err}",
   'log.webrtcFail': "Could not apply WebRTC protection: {err}",
   'log.imported': '{n} proxies imported.',
   'log.jobDone': '{label} finished ({s}s).',
@@ -532,6 +535,7 @@ const en = {
   'nav.settings': 'Settings',
   'side.realIp': 'Real IP',
   'side.hint': 'Double-click: connect · Del: delete · Ctrl+A: select all',
+  'side.toggleKey': "{key}: proxy on/off",
   'side.otherExt': '⚠ Proxy settings are controlled by another extension.',
 
   'tb.download': 'Download & test lists',

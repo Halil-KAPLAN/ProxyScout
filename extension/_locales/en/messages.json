@@ -7,5 +7,8 @@
   },
   "extDesc": {
     "message": "Downloads free proxy lists, tests them over HTTP and HTTPS and routes your browser through a working proxy in one click."
+  },
+  "cmdToggle": {
+    "message": "Turn the proxy on or off"
   }
 }

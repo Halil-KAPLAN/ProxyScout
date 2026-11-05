@@ -112,6 +112,7 @@ export function firefoxManifest(m) {
     background: { page: 'background.html', persistent: true },
     browser_action: m.action,
     options_ui: m.options_ui,
+    ...(m.commands ? { commands: m.commands } : {}),
     icons: m.icons,
     browser_specific_settings: {
       gecko: {

@@ -740,8 +740,16 @@ function renderHeader() {
     $('#connSub').textContent = p ? t('conn.offLast', { addr: addr(p) }) : t(matchMedia('(hover: none)').matches ? 'conn.offHintTouch' : 'conn.offHint');
   }
   const warn = store.control === 'controlled_by_other_extensions' ? `<div style="color:var(--err)">${esc(t('side.otherExt'))}</div>` : '';
-  $('#sideInfo').innerHTML = `${warn}${esc(t('side.realIp'))}: <span class="mono">${store.realIp || '—'}</span><br>${esc(t('side.hint'))}`;
+  const key = toggleKey ? `<br>${esc(t('side.toggleKey', { key: toggleKey }))}` : '';
+  $('#sideInfo').innerHTML = `${warn}${esc(t('side.realIp'))}: <span class="mono">${store.realIp || '—'}</span><br>${esc(t('side.hint'))}${key}`;
 }
+
+// Aç/kapat kısayolu (kullanıcı tarayıcının kısayol ayarlarından değiştirmiş ya da kaldırmış olabilir).
+let toggleKey = '';
+chrome.commands?.getAll?.().then((all) => {
+  toggleKey = all.find((c) => c.name === 'toggle-proxy')?.shortcut || '';
+  if (toggleKey) renderHeader();
+}).catch(() => {});
 
 function renderJob() {
   const j = store.job;

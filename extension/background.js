@@ -1430,6 +1430,19 @@ const handlers = {
   },
 };
 
+// Klavye kısayolu (varsayılan Alt+Shift+P; tarayıcının kısayol ayarlarından değiştirilebilir): proxy'yi aç/kapat.
+// Açarken son bağlanılan proxy, o yoksa en iyi çalışan seçilir (setEnabled).
+chrome.commands?.onCommand.addListener(async (command) => {
+  if (command !== 'toggle-proxy') return;
+  await ready;
+  try {
+    await setEnabled(!S.active.enabled);
+  } catch (e) {
+    log('err', 'log.shortcutFail', { err: errParam(e) });
+    flush();
+  }
+});
+
 chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
   (async () => {
     await ready;

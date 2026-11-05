@@ -40,6 +40,14 @@
     "page": "manager.html",
     "open_in_tab": true
   },
+  "commands": {
+    "toggle-proxy": {
+      "suggested_key": {
+        "default": "Alt+Shift+P"
+      },
+      "description": "__MSG_cmdToggle__"
+    }
+  },
   "icons": {
     "16": "icons/brand16.png",
     "32": "icons/brand32.png",
