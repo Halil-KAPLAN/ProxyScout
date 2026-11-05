@@ -1247,8 +1247,9 @@ const handlers = {
 
   delete: ({ ids }) => removeIds(ids),
   purge: ({ mode }) => {
+    // Toplu silme favorilere ve kullanıcının kendi eklediklerine dokunmaz: onlar ancak seçilip silinebilir.
     const ids = [...S.proxies.values()]
-      .filter((p) => (mode === 'all' ? p.id !== S.active.id : p.status === 'dead'))
+      .filter((p) => !p.fav && !p.mine && (mode === 'all' ? p.id !== S.active.id : p.status === 'dead'))
       .map((p) => p.id);
     const n = removeIds(ids);
     log('info', 'log.deleted', { n });

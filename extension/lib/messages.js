@@ -157,6 +157,7 @@ const tr = {
   'menu.copy.visibleScheme': 'Görünenleri kopyala (tür://ip:port)',
   'menu.del.selected': 'Seçilenleri sil',
   'menu.del.dead': 'Tüm ölüleri sil',
+  'menu.del.keepNote': "Favoriler ve Benim proxy'lerim korunur",
   'menu.del.all': 'Tüm listeyi temizle',
   'search.ph': 'Ara: IP, port, ülke, şehir…',
   'filter.allTypes': 'Tüm türler',
@@ -229,7 +230,7 @@ const tr = {
   'toast.sourcesReset': 'Kaynaklar sıfırlandı.',
   'toast.siteInvalid': 'Geçerli bir site adresi girin (ör. discord.com).',
   'log.sitesStart': '{n} çalışan proxy ile {s} site deneniyor…',
-  'confirm.deleteAll': 'Tüm proxy listesi silinsin mi? (Bağlı olduğunuz proxy korunur.)',
+  'confirm.deleteAll': "Tüm proxy listesi silinsin mi? (Bağlı olduğunuz proxy, favorileriniz ve Benim proxy'lerim korunur; onları seçip silebilirsiniz.)",
   'confirm.resetSources': 'Kaynak listesi varsayılana dönsün mü? Eklediğiniz özel kaynaklar silinir.',
 
   // Kaynaklar
@@ -501,6 +502,7 @@ const en = {
   'menu.copy.visibleScheme': 'Copy visible (type://ip:port)',
   'menu.del.selected': 'Delete selected',
   'menu.del.dead': 'Delete all dead',
+  'menu.del.keepNote': 'Favorites and My proxies are kept',
   'menu.del.all': 'Clear the whole list',
   'search.ph': 'Search: IP, port, country, city…',
   'filter.allTypes': 'All types',
@@ -571,7 +573,7 @@ const en = {
   'toast.sourcesReset': 'Sources reset.',
   'toast.siteInvalid': 'Enter a valid site address (e.g. discord.com).',
   'log.sitesStart': 'Trying {s} sites through {n} working proxies…',
-  'confirm.deleteAll': 'Delete the whole proxy list? (The connected proxy is kept.)',
+  'confirm.deleteAll': 'Delete the whole proxy list? (The connected proxy, your favorites and My proxies are kept; select them to delete them.)',
   'confirm.resetSources': 'Reset the source list to defaults? Your custom sources will be removed.',
 
   'src.title': 'Proxy sources',
