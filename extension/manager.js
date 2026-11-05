@@ -695,6 +695,20 @@ async function webrtcIps(timeout = 4000) {
   return [...ips];
 }
 
+// Tarayıcının WebRTC ayarı proxy'den geçmeyen UDP'yi kapatıyor mu? (WebRTC koruması ya da başka bir eklenti/ayar.)
+// Chrome bu ayarı eklentinin kendi sayfalarına uygulamaz: buradaki deneme gerçek IP'yi yine görür, web siteleri görmez.
+// Bu yüzden ayar etkinse sonuç ayardan okunur. "privacy" izni yoksa chrome.privacy de yoktur → null.
+async function webrtcBlocked() {
+  const pol = chrome.privacy?.network?.webRTCIPHandlingPolicy;
+  if (!pol) return null;
+  try {
+    const d = await pol.get({});
+    return d.value === 'disable_non_proxied_udp';
+  } catch {
+    return null;
+  }
+}
+
 const leakDlg = $('#leakDlg');
 async function leakCheck() {
   const body = $('#leakBody');
@@ -704,7 +718,8 @@ async function leakCheck() {
   const line = (cls, title, html, extra = '') => `<div class="leak-row ${cls}"><b>${esc(title)}</b><div>${html}</div>${extra}</div>`;
   body.innerHTML = line('wait', t('leak.exit'), esc(t('leak.checking')));
   again.disabled = true;
-  const [ipr, rtc] = await Promise.all([send('checkIp', { real: true }).catch((e) => ({ error: e.message })), webrtcIps()]);
+  const blocked = on && (await webrtcBlocked());
+  const [ipr, rtc] = await Promise.all([send('checkIp', { real: true }).catch((e) => ({ error: e.message })), blocked ? [] : webrtcIps()]);
   const rows = [];
   if (ipr.error) rows.push(line('bad', t('leak.exit'), esc(t('toast.ipFail', { err: t(ipr.error) }))));
   else {
@@ -713,7 +728,8 @@ async function leakCheck() {
     const note = !on ? 'leak.off' : leaked ? 'leak.notProxied' : 'leak.exitOk';
     rows.push(line(!on || leaked ? 'bad' : 'ok', t('leak.exit'), `<span class="mono">${esc(ipr.ip)}</span>${loc} · ${num(ipr.ms)} ms<small>${esc(t(note))}</small>`));
   }
-  if (rtc == null) rows.push(line('ok', t('leak.webrtc'), esc(t('leak.webrtcNone'))));
+  if (blocked) rows.push(line('ok', t('leak.webrtc'), esc(t('leak.webrtcProtected'))));
+  else if (rtc == null) rows.push(line('ok', t('leak.webrtc'), esc(t('leak.webrtcNone'))));
   else if (!on) rows.push(line('muted', t('leak.webrtc'), esc(t('leak.webrtcOff'))));
   else {
     // Proxy'ninkinden farklı ya da gerçek IP'yle aynı her genel IP sızıntıdır.
