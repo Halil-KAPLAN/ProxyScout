@@ -7,7 +7,10 @@
 //    aynı anda, PAC'i hiç değiştirmeden test edilebilir.)
 //  * "__pxd<token>" işareti olan istekler daima DIRECT gider (gerçek IP, ülke sorgusu).
 //  * HTTPS'de PAC yalnızca host adını gördüğü için SSL testi "hostMap" ile yapılır.
-//  * Geri kalan tüm trafik aktif proxy'ye (ya da DIRECT'e) gider.
+//  * "pxa<token>-…" ile başlayan alan adları daima aktif proxy'ye gider (bağlantı doğrulaması; "yalnızca bu siteler"
+//    açıkken bile proxy'nin çıkış IP'si okunabilsin diye).
+//  * Geri kalan tüm trafik aktif proxy'ye (ya da DIRECT'e) gider; "yalnızca bu siteler" (only) listesi varsa
+//    yalnızca listedeki alan adları proxy'ye, diğerleri doğrudan gider.
 // token rastgele üretilir; böylece web sayfaları bu işaretleri kötüye kullanamaz.
 
 export function directiveFor(p) {
@@ -34,6 +37,11 @@ export function httpsCheckHost(token, p, nonce) {
   return `pxs${token.slice(0, 10)}-${HOST_TYPE[p.type] || 'h'}-${p.host.replace(/\./g, '-')}-${p.port}-${nonce}.${HTTPS_CHECK_DOMAIN}`;
 }
 
+// Aktif proxy üzerinden çıkış IP'sini okumak için alan adı (Cloudflare trace; bkz. HTTPS_CHECK_DOMAIN).
+export function activeCheckHost(token, nonce) {
+  return `pxa${token.slice(0, 10)}-${nonce}.${HTTPS_CHECK_DOMAIN}`;
+}
+
 export function directMarker(token) {
   return `__pxd${token}=1`;
 }
@@ -51,7 +59,8 @@ const CHECK_RE = /^(PROXY|SOCKS|SOCKS5)~([A-Za-z0-9.-]+)~(\d{1,5})/;
 const HOST_RE = /^pxs[0-9a-f]+-(h|4|5)-(\d+)-(\d+)-(\d+)-(\d+)-(\d{1,5})-[a-z0-9]+\.cloudflareaccess\.com$/;
 const ipToNum = (ip) => ip.split('.').reduce((n, x) => n * 256 + +x, 0);
 
-function bypassed(host, bypass) {
+// Listede eşleşme. wide: düz bir alan adı (joker içermeyen) alt alan adlarını da kapsar ("ornek.com" → "www.ornek.com").
+function bypassed(host, bypass, wide = false) {
   for (const b of bypass) {
     if (b === '<local>') {
       if (host.indexOf('.') === -1) return true;
@@ -65,12 +74,18 @@ function bypassed(host, bypass) {
       if (((ipToNum(host) & mask) >>> 0) === ((ipToNum(b.substring(0, c)) & mask) >>> 0)) return true;
       continue;
     }
+    if (wide && !/[*?]/.test(b)) {
+      const d = b.toLowerCase();
+      const h = host.toLowerCase();
+      if (h === d || h.slice(-d.length - 1) === '.' + d) return true;
+      continue;
+    }
     if (shExpMatch(host, b)) return true;
   }
   return false;
 }
 
-export function findProxy({ token, active = null, bypass = [], hostMap = {} }, url, host) {
+export function findProxy({ token, active = null, bypass = [], hostMap = {}, only = null }, url, host) {
   const i = url.indexOf('__pxc' + token + '=');
   if (i !== -1) {
     const m = CHECK_RE.exec(url.substring(i + token.length + 6));
@@ -82,7 +97,10 @@ export function findProxy({ token, active = null, bypass = [], hostMap = {} }, u
   }
   if (url.indexOf('__pxd' + token) !== -1) return 'DIRECT';
   if (Object.prototype.hasOwnProperty.call(hostMap, host)) return hostMap[host];
-  if (!active || active === 'DIRECT' || bypassed(host, bypass)) return 'DIRECT';
+  if (!active || active === 'DIRECT') return 'DIRECT';
+  if (host.indexOf('pxa' + token.substring(0, 10) + '-') === 0) return active;
+  if (bypassed(host, bypass)) return 'DIRECT';
+  if (only && only.length && !bypassed(host, only, true)) return 'DIRECT';
   return active;
 }
 
@@ -97,8 +115,10 @@ export function toProxyInfo(directive) {
   return { type: 'http', host, port: +port };
 }
 
-export function buildPac({ token, active = null, bypass = [], hostMap = {} }) {
+export function buildPac({ token, active = null, bypass = [], hostMap = {}, only = null }) {
   return `var T=${JSON.stringify(token)};
+var ONLY=${JSON.stringify(only && only.length ? only : null)};
+var HA='pxa'+T.substring(0,10)+'-';
 var ACTIVE=${JSON.stringify(active || 'DIRECT')};
 var HOSTMAP=${JSON.stringify(hostMap)};
 var BYPASS=${JSON.stringify(bypass)};
@@ -106,9 +126,9 @@ var CHECK_RE=/^(PROXY|SOCKS|SOCKS5)~([A-Za-z0-9.\\-]+)~(\\d{1,5})/;
 var HS='pxs'+T.substring(0,10)+'-';
 var HOST_RE=/^pxs[0-9a-f]+-(h|4|5)-(\\d+)-(\\d+)-(\\d+)-(\\d+)-(\\d{1,5})-[a-z0-9]+\\.cloudflareaccess\\.com$/;
 function ipToNum(ip){var p=ip.split('.');return ((+p[0])*16777216)+((+p[1])*65536)+((+p[2])*256)+(+p[3]);}
-function bypassed(host){
-  for(var i=0;i<BYPASS.length;i++){
-    var b=BYPASS[i];
+function bypassed(host,list,wide){
+  for(var i=0;i<list.length;i++){
+    var b=list[i];
     if(b==='<local>'){ if(host.indexOf('.')===-1) return true; continue; }
     var c=b.indexOf('/');
     if(c!==-1){
@@ -116,6 +136,11 @@ function bypassed(host){
       var bits=+b.substring(c+1), net=ipToNum(b.substring(0,c));
       var mask=bits===0?0:(0xFFFFFFFF<<(32-bits))>>>0;
       if(((ipToNum(host)&mask)>>>0)===((net&mask)>>>0)) return true;
+      continue;
+    }
+    if(wide && !/[*?]/.test(b)){
+      var d=b.toLowerCase(), hl=host.toLowerCase();
+      if(hl===d || hl.slice(-d.length-1)==='.'+d) return true;
       continue;
     }
     if(shExpMatch(host,b)) return true;
@@ -134,7 +159,10 @@ function FindProxyForURL(url,host){
   }
   if(url.indexOf('__pxd'+T)!==-1) return 'DIRECT';
   if(HOSTMAP.hasOwnProperty(host)) return HOSTMAP[host];
-  if(ACTIVE==='DIRECT' || bypassed(host)) return 'DIRECT';
+  if(ACTIVE==='DIRECT') return 'DIRECT';
+  if(host.indexOf(HA)===0) return ACTIVE;
+  if(bypassed(host,BYPASS,false)) return 'DIRECT';
+  if(ONLY && !bypassed(host,ONLY,true)) return 'DIRECT';
   return ACTIVE;
 }`;
 }

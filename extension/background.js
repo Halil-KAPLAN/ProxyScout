@@ -4,7 +4,7 @@ import { IS_FIREFOX, HAS_BROWSER_SYNC, HAS_WEB_AUTH, authRedirectUrl, credsSyncA
 import { DEFAULT_SOURCES, enabledTypes } from './lib/sources.js';
 import { DEFAULT_SITES, siteHost } from './lib/sites.js';
 import { parseProxyList, parseManualList, proxyId } from './lib/parse.js';
-import { buildPac, findProxy, toProxyInfo, directiveFor, checkMarker, directMarker, httpsCheckHost } from './lib/pac.js';
+import { buildPac, findProxy, toProxyInfo, directiveFor, checkMarker, directMarker, httpsCheckHost, activeCheckHost } from './lib/pac.js';
 import { t, has, setLang, resolveLang } from './lib/i18n.js';
 import { loadGeo } from './lib/geoip.js';
 import { buildSnapshot, mergeSnapshot, packForChromeSync, unpackFromChromeSync, SYNC_PREFIX } from './lib/sync.js';
@@ -28,6 +28,8 @@ const DEFAULT_SETTINGS = {
   syncChrome: true,       // listeyi Chrome'un Google hesabı senkronuyla diğer cihazlara taşı
   driveClientId: '',      // Google Drive senkronu için OAuth istemci kimliği (cihaza özel)
   webrtcProtect: false,   // proxy açıkken WebRTC'nin gerçek IP'yi göstermesini engelle (isteğe bağlı "privacy" izni)
+  routeOnly: false,       // yalnızca onlySites'taki siteler proxy'den geçsin, gerisi doğrudan
+  onlySites: [],          // "ornek.com" alt alan adlarını da kapsar; joker ve CIDR de olur (bkz. lib/pac.js)
 };
 
 const IPV4 = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
@@ -318,6 +320,12 @@ async function applyWebrtc(on) {
   }
 }
 
+// IP servisi yanıtındaki IP. Cloudflare trace'te "ip=" satırı okunur (aynı yanıttaki tarayıcı sürümü de IP'ye benzer).
+const exitIpOf = (text) => (/^ip=([\d.]+)$/m.exec(text) || [])[1] || (text.match(IPV4) || []).pop();
+
+// "Yalnızca bu siteler" açık ve liste doluysa liste, değilse null (tüm trafik proxy'den).
+const onlyList = () => (S.settings.routeOnly && S.settings.onlySites?.length ? S.settings.onlySites : null);
+
 async function applyProxy(newHostMap) {
   if (newHostMap) hostMap = newHostMap;
   const act = S.active.enabled && S.proxies.get(S.active.id);
@@ -326,7 +334,7 @@ async function applyProxy(newHostMap) {
     S.control = 'controllable_by_this_extension';
     const socksAuth = {};
     for (const p of S.proxies.values()) if (p.user && p.type === 'socks5') socksAuth[p.host + ':' + p.port] = { user: p.user, pass: p.pass || '' };
-    ffProxy = act || S.job ? { token: S.token, active: act ? directiveFor(act) : null, bypass: S.settings.bypass, hostMap, socksAuth } : null;
+    ffProxy = act || S.job ? { token: S.token, active: act ? directiveFor(act) : null, bypass: S.settings.bypass, only: onlyList(), hostMap, socksAuth } : null;
     updateBadge();
     return;
   }
@@ -336,7 +344,7 @@ async function applyProxy(newHostMap) {
     if (!act && !S.job) {
       await chrome.proxy.settings.clear({ scope: 'regular' });
     } else {
-      const data = buildPac({ token: S.token, active: act ? directiveFor(act) : null, bypass: S.settings.bypass, hostMap });
+      const data = buildPac({ token: S.token, active: act ? directiveFor(act) : null, bypass: S.settings.bypass, only: onlyList(), hostMap });
       await chrome.proxy.settings.set({ value: { mode: 'pac_script', pacScript: { data, mandatory: false } }, scope: 'regular' });
     }
   } catch (e) {
@@ -853,7 +861,7 @@ function pickBest(exclude = new Set()) {
 async function verifyRoute() {
   const one = (u) =>
     fetchText(`${u}?_=${rnd()}`, 12000).then((r) => {
-      const ip = r.res.ok && (r.text.match(IPV4) || []).pop();
+      const ip = r.res.ok && exitIpOf(r.text);
       if (!ip) throw new Error('invalid');
       return { ip, ms: r.ms };
     });
@@ -862,6 +870,13 @@ async function verifyRoute() {
       if (!r.res.ok || r.text.length < 5000) throw new Error('invalid');
     });
   try {
+    // "Yalnızca bu siteler" açıkken IP servisleri ve Vikipedi doğrudan gider; çıkış IP'si her durumda proxy'den
+    // geçen doğrulama alan adıyla (Cloudflare trace) okunur, site denemesi atlanır.
+    if (onlyList()) {
+      const r = await one(`https://${activeCheckHost(S.token, rnd())}/cdn-cgi/trace`);
+      if (S.realIp && r.ip === S.realIp) return { ok: false, error: 'direct' };
+      return { ok: true, ...r };
+    }
     const [r] = await Promise.all([Promise.any([one('https://api.ipify.org/'), one('https://icanhazip.com/')]), site().catch((e) => Promise.reject({ errors: [e] }))]);
     if (S.realIp && r.ip === S.realIp) return { ok: false, error: 'direct' };
     return { ok: true, ...r };
@@ -905,7 +920,7 @@ async function connect(id, { verify = true } = {}) {
       scheduleSave();
       log('ok', 'log.connected', { ...base, country: p.country || '', ms: r.ms });
       // Bağlı proxy'nin site sonuçlarını tazele (tüm trafik zaten bu proxy'den geçiyor; beklenmez).
-      if (S.settings.siteTest && siteUrls().length && !S.job)
+      if (S.settings.siteTest && siteUrls().length && !S.job && !onlyList())
         probeSites(siteUrls()).then((sites) => {
           if (S.active.enabled && S.active.id === p.id) Object.assign(p, { sites, sitesTs: Date.now() }), touch(p), scheduleSave();
         });
@@ -1398,10 +1413,11 @@ const handlers = {
   // Şu anki çıkış IP'sini (aktif proxy üzerinden) ve konumunu göster.
   checkIp: async ({ real } = {}) => {
     let ip, ms;
-    for (const u of ['https://api.ipify.org/', 'https://icanhazip.com/', 'http://httpbin.org/ip', 'https://ifconfig.me/ip']) {
+    const via = S.active.enabled && onlyList() ? [`https://${activeCheckHost(S.token, rnd())}/cdn-cgi/trace`] : [];
+    for (const u of [...via, 'https://api.ipify.org/', 'https://icanhazip.com/', 'http://httpbin.org/ip', 'https://ifconfig.me/ip']) {
       try {
         const r = await fetchText(`${u}?_=${rnd()}`, 10000);
-        ip = r.res.ok && (r.text.match(IPV4) || []).pop();
+        ip = r.res.ok && exitIpOf(r.text);
         ms = r.ms;
         if (ip) break;
       } catch {}

@@ -13,7 +13,8 @@ const STATUS_CODE = { alive: 'a', dead: 'd', new: 'n' };
 const CODE_STATUS = { a: 'alive', d: 'dead', n: 'new' };
 
 // Cihaza özgü kalması gereken ayarlar (senkronize edilmez).
-export const LOCAL_ONLY_SETTINGS = ['driveClientId'];
+// webrtcProtect: izni ("privacy") her tarayıcıda ayrıca verilir; başka cihaza taşınırsa orada izinsiz açık görünürdü.
+export const LOCAL_ONLY_SETTINGS = ['driveClientId', 'webrtcProtect'];
 
 const priority = (p) => (p.fav || p.mine ? 0 : p.status === 'alive' && p.ssl === true ? 1 : p.status === 'alive' ? 2 : 3);
 const score = (p) => p.sslMs ?? (p.latency != null ? p.latency + 1e5 : 1e9);

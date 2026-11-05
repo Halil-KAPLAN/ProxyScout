@@ -731,7 +731,8 @@ function renderHeader() {
     $('#connSub').textContent = t('conn.connectingSub');
   } else if (on) {
     $('#connTitle').innerHTML = `${p.country ? `<span class="flag">${flag(p.country)}</span>` : ''}${p.type.toUpperCase()} ${esc(addr(p))}`;
-    $('#connSub').textContent = [a.failed && t('conn.noResp', { err: errorText(a.failed) }), [countryName(p), p.city].filter(Boolean).join(', '), anonText(p.anon), p.ssl === true ? 'HTTPS ✓' : p.ssl === false ? 'HTTPS ✗' : '', p.latency != null && p.latency + ' ms', a.since && t('conn.since', { ago: ago(a.since) })]
+    const only = store.settings.routeOnly && store.settings.onlySites?.length;
+    $('#connSub').textContent = [a.failed && t('conn.noResp', { err: errorText(a.failed) }), only && t('conn.onlySites', { n: only }), [countryName(p), p.city].filter(Boolean).join(', '), anonText(p.anon), p.ssl === true ? 'HTTPS ✓' : p.ssl === false ? 'HTTPS ✗' : '', p.latency != null && p.latency + ' ms', a.since && t('conn.since', { ago: ago(a.since) })]
       .filter(Boolean)
       .join(' · ');
   } else {
@@ -988,7 +989,9 @@ function fillSettings() {
     if (inp.type === 'checkbox') inp.checked = !!v;
     else inp.value = Array.isArray(v) ? v.join('\n') : v;
   }
+  $('#onlySitesRow').hidden = !f.elements.routeOnly.checked;
 }
+$('#routeOnly').addEventListener('change', (e) => ($('#onlySitesRow').hidden = !e.target.checked));
 
 // WebRTC korumasını açmak tarayıcıdan bir kez izin ister; verilmezse anahtar kapalı kalır.
 $('#settingsForm').elements.webrtcProtect.addEventListener('change', async (e) => {
@@ -1007,7 +1010,7 @@ $('#settingsForm').addEventListener('submit', async (e) => {
     if (!inp) continue;
     if (inp.type === 'checkbox') s[k] = inp.checked;
     else if (inp.type === 'number') s[k] = +inp.value;
-    else if (k === 'bypass') s[k] = inp.value.split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+    else if (k === 'bypass' || k === 'onlySites') s[k] = inp.value.split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
     else s[k] = inp.value.trim();
   }
   if (!/^http:\/\//i.test(s.judgeUrl)) return toast(t('toast.judgeHttp'), 'err');

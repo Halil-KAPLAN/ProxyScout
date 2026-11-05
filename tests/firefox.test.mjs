@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
-import { buildPac, findProxy, toProxyInfo, shExpMatch, checkMarker, directMarker, directiveFor, httpsCheckHost } from '../extension/lib/pac.js';
+import { buildPac, findProxy, toProxyInfo, shExpMatch, checkMarker, directMarker, directiveFor, httpsCheckHost, activeCheckHost } from '../extension/lib/pac.js';
 import { firefoxManifest, GECKO_ID } from '../tools/build-zip.mjs';
 
 // Chrome'un PAC'ini ve Firefox'un findProxy'sini aynı girdilerle çalıştırıp sonuçları karşılaştırır.
@@ -43,12 +43,21 @@ test('findProxy, PAC betiğiyle her durumda aynı kararı verir', () => {
     'http://10.20.30.40/',
     'https://git.corp.lan/',
     'https://corp.lan/',
+    `https://${activeCheckHost(T, 'n4')}/cdn-cgi/trace`,
+    `https://${activeCheckHost('ffffffffffffffff', 'n5')}/`,
+    'https://www.youtube.com/watch',
+    'https://youtube.com/',
+    'https://notyoutube.com/',
+    'https://m.wikipedia.org/',
+    'https://192.168.5.5/',
   ];
   const cfgs = [
     { token: T, active: directiveFor(ph), bypass: ['<local>', 'localhost', '192.168.0.0/16', '10.0.0.0/8', '*.corp.lan'], hostMap: { 'api.ipify.org': 'PROXY 7.7.7.7:80' } },
     { token: T, active: directiveFor(p5), bypass: [] },
     { token: T, active: null, bypass: ['<local>'] },
     { token: T },
+    { token: T, active: directiveFor(ph), bypass: ['<local>', '192.168.0.0/16'], only: ['youtube.com', '*.wikipedia.org', '192.168.0.0/16'] },
+    { token: T, active: directiveFor(p5), bypass: [], only: [] },
   ];
   for (const cfg of cfgs) {
     const run = both(cfg);

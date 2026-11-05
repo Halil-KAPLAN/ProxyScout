@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { parseProxyList, parseManualList } from '../extension/lib/parse.js';
-import { buildPac, checkMarker, directMarker, directiveFor } from '../extension/lib/pac.js';
+import { buildPac, checkMarker, directMarker, directiveFor, activeCheckHost } from '../extension/lib/pac.js';
 
 test('düz liste, önekler ve hatalı satırlar', () => {
   const txt = '1.2.3.4:8080\n5.6.7.8:3128:Indonesia\nsocks5://9.9.9.9:1080\n999.1.1.1:80\n0.0.0.0:80\n1.2.3.4:8080\n10.0.0.1 8000\n';
@@ -65,6 +65,26 @@ test('PAC: test işaretçisi, doğrudan işaretçi, aktif proxy, bypass, hostMap
   const D = pacFn({ token: T });
   assert.equal(D('https://example.com/'), 'DIRECT');
   assert.equal(D(`http://httpbin.org/get?${checkMarker(T, ph)}`), 'PROXY 1.2.3.4:8080');
+});
+
+test("PAC: yalnızca listedeki siteler proxy'den geçer", () => {
+  const T = 'abc123def456';
+  const ph = { type: 'http', host: '1.2.3.4', port: 8080 };
+  const F = pacFn({ token: T, active: directiveFor(ph), bypass: ['<local>'], only: ['YouTube.com', '*.wikipedia.org'] });
+  assert.equal(F('https://youtube.com/'), 'PROXY 1.2.3.4:8080');
+  assert.equal(F('https://www.youtube.com/watch?v=1'), 'PROXY 1.2.3.4:8080'); // düz alan adı alt alan adlarını kapsar
+  assert.equal(F('https://notyoutube.com/'), 'DIRECT');
+  assert.equal(F('https://tr.wikipedia.org/'), 'PROXY 1.2.3.4:8080');
+  assert.equal(F('https://wikipedia.org/'), 'DIRECT'); // joker yalnızca kendi kalıbına uyar
+  assert.equal(F('https://example.com/'), 'DIRECT');
+  // Bağlantı doğrulaması listede olmasa da aktif proxy'den geçer; test işaretçileri etkilenmez.
+  assert.equal(F(`https://${activeCheckHost(T, 'x1')}/cdn-cgi/trace`), 'PROXY 1.2.3.4:8080');
+  assert.equal(F(`http://httpbin.org/get?${checkMarker(T, { type: 'socks5', host: '5.6.7.8', port: 1080 })}`), 'SOCKS5 5.6.7.8:1080');
+  // Boş liste: her şey proxy'den.
+  const A = pacFn({ token: T, active: directiveFor(ph), only: [] });
+  assert.equal(A('https://example.com/'), 'PROXY 1.2.3.4:8080');
+  // Proxy kapalıyken doğrulama alan adı da doğrudan.
+  assert.equal(pacFn({ token: T })(`https://${activeCheckHost(T, 'x2')}/`), 'DIRECT');
 });
 
 test('çevrimdışı IP → ülke veritabanı', async () => {
