@@ -566,6 +566,18 @@ $('#menuTest').addEventListener('click', (e) => {
 $('#menuCopy').addEventListener('click', async (e) => {
   const what = e.target.closest('[data-copy]')?.dataset.copy;
   if (!what) return;
+  // Dosyaya kaydet: her satır "tür://kullanıcı:şifre@ip:port"; İçe aktar ile aynen geri yüklenir.
+  if (what.startsWith('file-')) {
+    const list = what === 'file-mine' ? [...store.proxies.values()].filter((p) => p.mine) : ui.visible;
+    if (!list.length) return toast(t(what === 'file-mine' ? 'toast.noMine' : 'toast.noCopy'), 'err');
+    const blob = new Blob([list.map((p) => formatProxy(p, true)).join('\n') + '\n'], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `proxyscout-${what === 'file-mine' ? 'my-proxies' : 'proxies'}-${new Date().toISOString().slice(0, 10)}.txt`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+    return toast(t('toast.saved', { n: num(list.length) }), 'ok');
+  }
   const list = what === 'selected' ? ui.visible.filter((p) => ui.selected.has(p.id)) : ui.visible;
   if (!list.length) return toast(t('toast.noCopy'), 'err');
   await navigator.clipboard.writeText(list.map((p) => formatProxy(p, what === 'visible-scheme')).join('\n'));
