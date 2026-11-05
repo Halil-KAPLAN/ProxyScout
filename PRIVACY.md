@@ -1,6 +1,6 @@
 # ProxyScout — Gizlilik Politikası / Privacy Policy
 
-_Son güncelleme / Last updated: 19.10.2026 (Firefox)_
+_Son güncelleme / Last updated: 05.11.2026_
 
 ## Türkçe
 
@@ -20,8 +20,13 @@ eklediğiniz proxy'ler (kullanıcı adı/şifre dahil), kaynak seçimleri ve aya
 | httpbin.org, Cloudflare (`*.cloudflareaccess.com/cdn-cgi/trace`) | Proxy'nin çalışıp çalışmadığını ve gizlilik düzeyini test etme | Test isteği (proxy üzerinden) |
 | ip-api.com | Çalışan proxy'lerin ülke/şehir bilgisi | Proxy'lerin IP adresleri |
 | api.ipify.org, icanhazip.com | "IP'mi göster" ve bağlantı doğrulama | Standart HTTP isteği |
+| Google STUN sunucusu (`stun.l.google.com`) | Yalnızca "IP'mi göster" → gizlilik kontrolünde: WebRTC'nin gerçek IP'nizi gösterip göstermediğini anlamak | Standart WebRTC/STUN isteği (her web sayfasının yapabildiği gibi) |
 | Seçtiğiniz proxy sunucusu | Siz bağlandığınızda tarayıcı trafiğiniz bu sunucudan geçer | Gezinme trafiği |
 | Google (yalnızca senkronizasyonu açarsanız) | Listeyi cihazlarınız arasında taşımak | Aşağıya bakın |
+
+**WebRTC koruması (isteğe bağlı):** Açarsanız eklenti tarayıcının isteğe bağlı "privacy" iznini ister
+ve yalnızca proxy açıkken tarayıcının WebRTC ayarını "proxy'siz UDP'yi kapat" olarak değiştirir;
+proxy kapanınca ayar eski haline döner. Bu izin başka hiçbir veriye erişmek için kullanılmaz.
 
 **Senkronizasyon (isteğe bağlı):**
 - _Chrome senkronu_: Özet (çalışan proxy'ler, favoriler, kendi proxy'leriniz, kaynak seçimleri,
@@ -62,8 +67,15 @@ you add (including username/password), source choices and settings.
 **Third parties contacted** (only as needed for the features): proxy list websites (to download lists);
 httpbin.org and Cloudflare (`*.cloudflareaccess.com/cdn-cgi/trace`) to test proxies; ip-api.com
 (proxy IP addresses, to look up country/city); api.ipify.org / icanhazip.com ("Show my IP" and
-connection checks); the proxy server you choose (your browsing traffic goes through it while
+connection checks); Google's STUN server (`stun.l.google.com`), only when you run the privacy check
+under "Show my IP", to see whether WebRTC reveals your real IP (a standard WebRTC request that any web
+page can make); the proxy server you choose (your browsing traffic goes through it while
 connected); Google, only if you turn on sync.
+
+**WebRTC protection (optional):** If you turn it on, the extension asks for the browser's optional
+"privacy" permission and, only while the proxy is on, sets the browser's WebRTC policy to "disable
+non-proxied UDP"; the setting is restored when the proxy is turned off. The permission is not used to
+access any other data.
 
 **Sync (optional):** With _Chrome sync_ a summary (working proxies, favorites, your proxies, source
 choices, settings) is stored in the sync storage of the Google account you are signed in to Chrome

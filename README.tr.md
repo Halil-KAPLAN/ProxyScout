@@ -30,6 +30,7 @@ sayfasında **Geliştirici modu**nu açın ve **Paketlenmemiş öğe yükle** �
 | --- | --- |
 | ![Popup'tan tek tıkla bağlanma](store/screenshots/tr/02-popup.png) | ![Her proxy ile hangi siteler açılıyor](store/screenshots/tr/03-sites.png) |
 | ![Kaynak ve tür seçimi](store/screenshots/tr/04-sources.png) | ![Tarayıcılar arası senkron](store/screenshots/tr/05-sync.png) |
+| ![Gizlilik kontrolü: çıkış IP'si, WebRTC ve DNS](store/screenshots/tr/06-privacy.png) | |
 
 ## Özellikler
 
@@ -53,9 +54,21 @@ sayfasında **Geliştirici modu**nu açın ve **Paketlenmemiş öğe yükle** �
 - **Ülke, şehir ve bayrak:** her proxy için (çevrimdışı ülke veritabanı; çalışanlar için şehir ve
   servis sağlayıcı).
 - **Tek tıkla bağlanma**, **tek anahtarla** kapatma. Araç çubuğu ikonu durumu gösterir: yeşil bağlı,
-  turuncu bağlanıyor, kırmızı yanıt yok, gri kapalı.
+  turuncu bağlanıyor, kırmızı yanıt yok, gri kapalı. Popup'taki ⚡ düğmesi listedeki en hızlı proxy'ye
+  bağlanır (isterseniz önce ülke seçin); **Alt+Shift+P** proxy'yi her yerden açıp kapatır (tarayıcının
+  eklenti kısayolları ayarından değiştirilebilir).
 - **IP sızıntısı yok:** bağlı proxy ölürse trafik doğrudan bağlantıya düşmez. **Otomatik geçiş**
   açıksa sıradaki en iyi çalışan proxy'ye geçilir.
+- **Gizlilik kontrolü** (**IP'mi göster**): çıkış IP'niz ve ülkesi, WebRTC'nin gerçek IP'nizi gösterip
+  göstermediği ve DNS'in proxy'den geçip geçmediği. Tek tıkla açılan **WebRTC koruması**, bağlıyken
+  WebRTC'nin proxy'yi atlamasını engeller.
+- **Yalnızca seçtiğiniz siteler proxy'den** (isteğe bağlı): `youtube.com` gibi siteleri **Ayarlar →
+  Bağlantı**'ya yazın; geri kalan her şey doğrudan gider.
+- **Benim proxy'lerim:** içe aktardığınız proxy'ler ve ücretli bir sağlayıcının listeleri. Sağlayıcının
+  liste adresini **Kaynaklar**'a **Benim proxy'lerim** açık olarak ekleyin; liste saatte bir güncellenir,
+  yeni proxy'ler eklenir, listeden çıkanlar kaldırılır. Benim proxy'lerim ve favoriler **Tüm ölüleri sil**
+  ya da **Tüm listeyi temizle** ile silinmez; metin dosyasına kaydedilebilir.
+- Her satırda **Bağlan**'ın yanında **Ölülere taşı**: görmek istemediğiniz proxy'ler için.
 - **Senkron:** tarayıcının kendi senkronu ya da Google Drive ile tüm tarayıcılarınızda aynı liste.
 - Türkçe ve İngilizce arayüz, koyu ve açık tema. Reklam yok, izleme yok, hesap gerekmez.
 
@@ -68,10 +81,14 @@ sayfasında **Geliştirici modu**nu açın ve **Paketlenmemiş öğe yükle** �
 | Proxy'yi kapat | Popup'ın üstündeki ya da yöneticideki bağlantı kartındaki anahtar |
 | Yeniden test et, temizle | **Test et ▾** (seçilenler, yeniler, çalışanlar, ölüler…) ve **Sil ▾** (ölüler) |
 | Kendi proxy'lerinizi ekleyin | **İçe aktar** (`ip:port`, `socks5://ip:port`, `kullanıcı:şifre@ip:port`, `ip:port:kullanıcı:şifre`) |
+| Sağlayıcı listesini güncel tutun | **Kaynaklar** → liste adresini ekleyin ve **Benim proxy'lerim**'i açın |
 | Kaynak seçin ya da ekleyin | Sol menü → **Kaynaklar** (telefonda: üstteki ⚙ → **Kaynaklar**) |
+| IP sızıntısını kontrol edin | Yöneticinin üstündeki **IP'mi göster** |
+| Yalnızca bazı siteleri proxy'den geçirin | **Ayarlar → Bağlantı** → **Yalnızca aşağıdaki siteler proxy'den geçsin** |
+| Listeyi dosyaya kaydedin | **Kopyala ▾** → **Benim proxy'lerimi dosyaya kaydet** / **Görünenleri dosyaya kaydet** |
 
-Kısayollar (yönetici): `Enter` = seçiliye bağlan, `Del` = sil, `Ctrl+A` = tümünü seç,
-`Shift/Ctrl+tık` = çoklu seçim.
+Klavye: `Alt+Shift+P` = proxy aç/kapat (tarayıcının her yerinde). Yöneticide: `Enter` = seçiliye
+bağlan, `Del` = sil, `Ctrl+A` = tümünü seç, `Shift/Ctrl+tık` = çoklu seçim.
 
 ## Nasıl çalışıyor?
 
@@ -107,6 +124,10 @@ Kendi Google istemcinizi kullanmak için (ör. bir çatalda):
   destekler); Firefox ikisini de destekler.
 - Proxy ayarını aynı anda tek bir eklenti kontrol edebilir; başka bir proxy/VPN eklentisi varsa devre
   dışı bırakın.
+- WebRTC koruması isteğe bağlı "privacy" iznini ister (tarayıcı bir kez sorar). Açıkken görüntülü
+  görüşme gibi özellikler yavaşlayabilir ya da çalışmayabilir.
+- SOCKS4 proxy'de alan adları kendi DNS'inizle çözülür (gizlilik kontrolü bunu uyarır); HTTP ve SOCKS5
+  proxy'lerde proxy tarafında çözülür.
 - Firefox: kendi proxy'lerinizin kullanıcı adı/şifresi, isteğe bağlı "kimlik doğrulama bilgisi" iznini
   verdikten sonra senkronlanır (Ayarlar → Senkronizasyon → **Şimdi senkronize et**).
 - Bağlıyken liste indirme aktif proxy üzerinden yapılır.

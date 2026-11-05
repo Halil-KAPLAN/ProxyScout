@@ -4,7 +4,7 @@ Chrome Web Store ve Microsoft Edge Add-ons formlarına kopyalanacak metinler. G�
 
 | Dosya | Nerede kullanılır |
 | --- | --- |
-| `screenshots/tr/*.png`, `screenshots/en/*.png` (1280×800) | Ekran görüntüleri (CWS: en fazla 5, Edge: en fazla 10) |
+| `screenshots/tr/*.png`, `screenshots/en/*.png` (1280×800) | Ekran görüntüleri (Edge, Firefox: 6'sı da · CWS en fazla 5 alır: 01, 02, 03, 06, 05 — `04-sources` dışarıda) |
 | `promo/small-440x280-*.png` | CWS **Small promo tile** (zorunlu) · Edge **Small promotional tile** |
 | `promo/marquee-1400x560-*.png` | CWS **Marquee promo tile** · Edge **Large promotional tile** (isteğe bağlı) |
 | `logo-300.png` | Edge **Store logo** (300×300) |
@@ -54,8 +54,20 @@ ProxyScout, onlarca kaynaktan ücretsiz proxy listelerini indirir, her birini ge
 ■ TEK TIKLA BAĞLAN
 • Popup'tan ya da yönetici sayfasında çift tıklayarak bağlanın; tek anahtarla açıp kapatın.
 • Araç çubuğu ikonu durumu gösterir: yeşil bağlı, turuncu bağlanıyor, kırmızı yanıt yok, gri kapalı.
+• Popup'taki ⚡ düğmesi listedeki en hızlı proxy'ye bağlanır; önce ülke seçebilirsiniz.
+• Alt+Shift+P ile proxy'yi her yerden açıp kapatın (kısayol değiştirilebilir).
 • Otomatik geçiş: bağlı proxy ölürse en iyi çalışan proxy'ye kendiliğinden geçer.
 • Yerel ağ adresleri ve sizin belirlediğiniz alan adları proxy'yi atlar.
+• İsterseniz yalnızca seçtiğiniz siteler (ör. youtube.com) proxy'den geçer, geri kalanı doğrudan gider.
+
+■ GİZLİLİK KONTROLÜ
+• "IP'mi göster" tek ekranda çıkış IP'nizi ve ülkesini, WebRTC'nin gerçek IP'nizi gösterip göstermediğini ve DNS'in proxy'den geçip geçmediğini gösterir.
+• WebRTC korumasını tek tıkla açın: bağlıyken WebRTC proxy'yi atlayıp gerçek IP'nizi gösteremez.
+
+■ BENİM PROXY'LERİM
+• Elinizdeki proxy'leri içe aktarın (kullanıcı adı/şifreli HTTP proxy'ler dahil).
+• Ücretli bir sağlayıcının liste adresini ekleyin: liste saatte bir güncellenir, yeni proxy'ler eklenir, listeden çıkanlar kaldırılır.
+• Benim proxy'lerim ve favoriler toplu silmede korunur; listeyi metin dosyasına kaydedin.
 
 ■ ÜLKE, ŞEHİR VE BAYRAK
 • Her proxy'nin ülkesi indirildiği anda bayrağıyla görünür (çevrimdışı veritabanı); çalışanların şehri ve servis sağlayıcısı da gösterilir.
@@ -67,7 +79,7 @@ ProxyScout, onlarca kaynaktan ücretsiz proxy listelerini indirir, her birini ge
 
 ■ DİĞER
 • Türkçe ve İngilizce arayüz (tarayıcı diline göre otomatik).
-• Kendi proxy'lerinizi içe aktarın (kullanıcı adı/şifreli HTTP proxy'ler dahil), listeyi kopyalayın.
+• Görmek istemediğiniz proxy'leri tek tıkla Ölülere taşıyın; listeleri kopyalayın.
 • Reklam yok, izleme yok, hesap gerekmez. Açık kaynak (GPL-3.0): https://github.com/Halil-KAPLAN/ProxyScout
 
 ⚠ ÖNEMLİ: Ücretsiz/açık proxy'ler üçüncü kişilerce işletilir ve güvenilir değildir. Bağlıyken şifrelenmemiş (http://) trafiğinizi görebilir veya değiştirebilirler; HTTPS sitelerin içeriği şifreli kalır. Şifre girdiğiniz ya da hassas işlem yaptığınız sitelerde ücretsiz proxy kullanmayın.
@@ -103,8 +115,20 @@ ProxyScout downloads free proxy lists from dozens of sources, really tests every
 ■ ONE-CLICK CONNECT
 • Connect from the popup or by double-clicking in the manager; one switch turns it on and off.
 • The toolbar icon shows the state: green connected, amber connecting, red not responding, grey off.
+• The ⚡ button in the popup connects to the fastest proxy in the list; pick a country first if you like.
+• Alt+Shift+P turns the proxy on or off from anywhere (you can change the shortcut).
 • Auto switch: if the connected proxy dies, ProxyScout switches to the best working one.
 • Local network addresses and domains you choose bypass the proxy.
+• Optionally send only the sites you choose (e.g. youtube.com) through the proxy; everything else goes direct.
+
+■ PRIVACY CHECK
+• "Show my IP" shows on one screen your exit IP and its country, whether WebRTC reveals your real IP, and whether DNS goes through the proxy.
+• Turn on WebRTC protection in one click: while connected, WebRTC cannot go around the proxy and reveal your real IP.
+
+■ MY PROXIES
+• Import the proxies you have (including HTTP proxies with username/password).
+• Add a paid provider's list address: the list is updated every hour, new proxies are added and removed ones are dropped.
+• My proxies and favorites are kept when you bulk-delete; save the list to a text file.
 
 ■ COUNTRY, CITY AND FLAGS
 • Every proxy shows its country flag as soon as it is downloaded (offline database); working ones also show city and ISP.
@@ -116,7 +140,7 @@ ProxyScout downloads free proxy lists from dozens of sources, really tests every
 
 ■ MORE
 • English and Turkish interface (follows your browser language).
-• Import your own proxies (including HTTP proxies with username/password) and copy lists.
+• Move proxies you don't want to see to Dead in one click; copy lists.
 • No ads, no tracking, no account required. Open source (GPL-3.0): https://github.com/Halil-KAPLAN/ProxyScout
 
 ⚠ IMPORTANT: Free/public proxies are run by third parties and are not trustworthy. While connected they can see or modify unencrypted (http://) traffic; the content of HTTPS sites stays encrypted. Do not use free proxies for logins or sensitive tasks.
@@ -138,6 +162,7 @@ ProxyScout downloads free proxy lists from dozens of sources, really tests every
 | `storage`, `unlimitedStorage` | Stores the proxy list (thousands of entries), test results, favorites and settings locally. |
 | `alarms` | Periodically checks whether the connected proxy still works (auto switch) and schedules sync. |
 | `webRequest`, `webRequestAuthProvider` | Supplies the username/password of private HTTP proxies the user adds when the proxy asks for authentication (`onAuthRequired`). Requests are not read, logged or modified. |
+| `privacy` (optional) | Requested only when the user turns on WebRTC protection (Settings → Connection, or the privacy check). While the proxy is on, sets `privacy.network.webRTCIPHandlingPolicy` to `disable_non_proxied_udp` so WebRTC cannot reveal the user's real IP by going around the selected proxy; the setting is cleared when the proxy is turned off. No other privacy setting is read or changed. |
 | `identity` | Optional Google Drive sync: `launchWebAuthFlow` to let the user sign in with Google (scope: `drive.appdata` + email). |
 | Host permission `<all_urls>` | Downloads proxy lists from any list website the user enables or adds, and sends test requests through the proxies (test endpoints: httpbin.org, Cloudflare, ip-api.com, ipify; with the optional site test, the sites the user picks in Settings). The extension does not inject scripts into or read the content of web pages. |
 
@@ -192,7 +217,9 @@ Why Manifest V2: the extension routes traffic with proxy.onRequest. A persistent
 
 lib/firefox-shim.js maps chrome.* to the promise-based browser.* (the code uses await chrome.* everywhere).
 
-Network requests: proxy list sites chosen by the user, httpbin.org and *.cloudflareaccess.com (proxy tests), ip-api.com (country/city of working proxies), api.ipify.org/icanhazip.com ("Show my IP"), and Google OAuth/Drive only if the user turns on Drive sync. No remote code, no analytics.
+Network requests: proxy list sites chosen by the user, httpbin.org and *.cloudflareaccess.com (proxy tests), ip-api.com (country/city of working proxies), api.ipify.org/icanhazip.com ("Show my IP"), stun.l.google.com (only when the user runs the privacy check, to see whether WebRTC reveals the real IP), list addresses the user adds as "My proxies" sources (refreshed hourly), and Google OAuth/Drive only if the user turns on Drive sync.
+
+Optional "privacy" permission: requested only when the user turns on WebRTC protection; while the proxy is on, privacy.network.webRTCIPHandlingPolicy is set to "disable_non_proxied_udp" and cleared again when the proxy is turned off. No remote code, no analytics.
 
 Data collection: required "none"; optional "authenticationInfo" is requested only when the user has private proxies with credentials and clicks a sync button — without it, credentials are never written to sync.
 

@@ -31,6 +31,7 @@ traffic goes through it; one switch turns it off again.
 | --- | --- |
 | ![One-click connect from the popup](store/screenshots/en/02-popup.png) | ![Which sites open through each proxy](store/screenshots/en/03-sites.png) |
 | ![Choose sources and proxy types](store/screenshots/en/04-sources.png) | ![Sync across browsers](store/screenshots/en/05-sync.png) |
+| ![Privacy check: exit IP, WebRTC and DNS](store/screenshots/en/06-privacy.png) | |
 
 ## Features
 
@@ -54,9 +55,21 @@ traffic goes through it; one switch turns it off again.
   proxies that open that site.
 - **Country, city and flag** for every proxy (offline country database, city/ISP for working proxies).
 - **One-click connect** and **one switch** to turn it off. The toolbar icon shows the state: green
-  connected, amber connecting, red not responding, grey off.
+  connected, amber connecting, red not responding, grey off. The ⚡ button in the popup connects to the
+  fastest proxy in the list (pick a country first if you like), and **Alt+Shift+P** turns the proxy on or
+  off from anywhere (change it in the browser's extension shortcuts).
 - **No IP leak:** if the connected proxy dies, traffic does not fall back to a direct connection.
   With **Auto switch** on, ProxyScout moves to the next best working proxy.
+- **Privacy check** (**Show my IP**): your exit IP and its country, whether WebRTC shows your real IP,
+  and whether DNS goes through the proxy. One click turns on **WebRTC protection**, which keeps WebRTC
+  from going around the proxy while you are connected.
+- **Only chosen sites through the proxy** (optional): list sites such as `youtube.com` in
+  **Settings → Connection**; everything else goes direct.
+- **My proxies:** proxies you import, and lists from a paid provider. Add the provider's list address
+  under **Sources** with **My proxies** on and it is updated every hour: new proxies are added, removed
+  ones are dropped. My proxies and favorites are never removed by **Delete all dead** or **Clear the whole list**,
+  and you can save them to a text file.
+- **Move to Dead** next to **Connect** in every row, for proxies you do not want to see.
 - **Sync** your list across browsers with the browser's own sync or Google Drive.
 - English and Turkish interface, dark and light themes. No ads, no tracking, no account needed.
 
@@ -69,10 +82,14 @@ traffic goes through it; one switch turns it off again.
 | Turn the proxy off | The switch at the top of the popup or in the manager's connection card |
 | Re-test or clean up | **Test ▾** (selected, new, working, dead, …) and **Delete ▾** (dead proxies) |
 | Add your own proxies | **Import** (`ip:port`, `socks5://ip:port`, `user:pass@ip:port`, `ip:port:user:pass`) |
+| Keep a provider's list in sync | **Sources** → add the list address and turn on **My proxies** |
 | Choose or add sources | Sidebar → **Sources** (on a phone: ⚙ at the top → **Sources**) |
+| Check for IP leaks | **Show my IP** at the top of the manager |
+| Send only some sites through the proxy | **Settings → Connection** → **Send only the sites below through the proxy** |
+| Save a list to a file | **Copy ▾** → **Save My proxies to a file** / **Save visible to a file** |
 
-Manager shortcuts: `Enter` = connect to selected, `Del` = delete, `Ctrl+A` = select all,
-`Shift/Ctrl+click` = multi-select.
+Keyboard: `Alt+Shift+P` = proxy on/off (anywhere in the browser). In the manager: `Enter` = connect to
+selected, `Del` = delete, `Ctrl+A` = select all, `Shift/Ctrl+click` = multi-select.
 
 ## How it works
 
@@ -106,6 +123,10 @@ To use your own Google client (for example in a fork), see
 - Chrome, Edge and Opera do not support username/password for SOCKS5 proxies (HTTP proxies are
   supported); Firefox supports both.
 - Only one extension can control the proxy setting at a time — disable other proxy/VPN extensions.
+- WebRTC protection needs the optional "privacy" permission (the browser asks once). While it is on,
+  video calls and similar features may be slower or may not work.
+- With a SOCKS4 proxy, domain names are resolved by your own DNS (the privacy check warns about this);
+  HTTP and SOCKS5 proxies resolve them on the proxy side.
 - Firefox: credentials of your own proxies are synced only after you grant the optional
   "authentication information" permission (Settings → Sync → **Sync now**).
 - While connected, list downloads go through the active proxy.

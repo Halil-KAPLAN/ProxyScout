@@ -1,12 +1,13 @@
 // Mağaza görsellerini üretir (Chrome Web Store + Edge Add-ons):
-//   store/screenshots/<tr|en>/0N-*.png   1280×800 ekran görüntüleri (başlıklı çerçeve)
+//   store/screenshots/<tr|en>/0N-*.png   1280×800 ekran görüntüleri (başlıklı çerçeve; CWS en fazla 5 alır)
 //   store/screenshots/opera/<tr|en>/0N-*.png  aynıları 800×500 (Opera add-ons)
 //   store/promo/small-440x280-<dil>.png  küçük tanıtım görseli
 //   store/promo/marquee-1400x560-<dil>.png  büyük tanıtım görseli
 // Eklenti gerçek bir Chrome'da çalıştırılır: listeler indirilip test edilir, bir proxy'ye bağlanılır.
 // Kullanım: node tools/store-assets.mjs <puppeteer klasörü>
 import { createRequire } from 'node:module';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
@@ -17,7 +18,16 @@ if (!ptDir) {
 }
 const puppeteer = createRequire(path.join(ptDir, 'package.json'))('puppeteer');
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const EXT = path.join(ROOT, 'extension');
+// Eklentinin geçici bir kopyası kullanılır: isteğe bağlı "privacy" izni zorunlu yapılır ki gizlilik
+// kontrolü ekranında WebRTC koruması (izin penceresi olmadan) gerçekten açık olsun.
+const EXT = mkdtempSync(path.join(os.tmpdir(), 'proxyscout-assets-'));
+cpSync(path.join(ROOT, 'extension'), EXT, { recursive: true });
+{
+  const m = JSON.parse(readFileSync(path.join(EXT, 'manifest.json'), 'utf8'));
+  m.permissions.push(...(m.optional_permissions || []));
+  delete m.optional_permissions;
+  writeFileSync(path.join(EXT, 'manifest.json'), JSON.stringify(m));
+}
 const OUT = path.join(ROOT, 'store');
 const EXAMPLE_IP = '203.0.113.24'; // belgelendirme için ayrılmış örnek adres (gerçek IP gösterilmez)
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -30,6 +40,7 @@ const TEXT = {
     sites: ['YouTube, Discord açılıyor mu?', 'Seçtiğin siteler en iyi proxy\'lerle denenir; hangisinin açıldığı ve ne kadar sürdüğü listede görünür. Kendi siteni de ekle.'],
     sources: ['Kaynakları ve türleri sen seç', '21 hazır kaynak; HTTP, SOCKS4, SOCKS5 seçimi ve kendi listelerini ekleme.'],
     sync: ['Listen tüm tarayıcılarında', 'Chrome senkronu ya da tek tıkla Google Drive: bulduğun proxy\'ler her cihazda hazır.'],
+    privacy: ['Gizliliğini tek tıkla kontrol et', 'Çıkış IP\'si, WebRTC ve DNS sızıntısı tek ekranda. WebRTC korumasını aç; istersen yalnızca seçtiğin siteler proxy\'den geçsin.'],
     tagline: 'Ücretsiz proxy\'leri bul, test et, tek tıkla bağlan',
   },
   en: {
@@ -38,6 +49,7 @@ const TEXT = {
     sites: ['Does it open YouTube or Discord?', 'The sites you pick are tried through the best proxies; the list shows which ones opened and how fast. Add your own sites too.'],
     sources: ['You choose the sources and types', '21 built-in sources; pick HTTP, SOCKS4, SOCKS5 and add your own lists.'],
     sync: ['Your list in every browser', 'Chrome sync or one-click Google Drive: the proxies you found are ready on every device.'],
+    privacy: ['Check your privacy in one click', 'Exit IP, WebRTC and DNS leaks on one screen. Turn on WebRTC protection, or send only the sites you choose through the proxy.'],
     tagline: 'Find free proxies, test them, connect in one click',
   },
 };
@@ -84,18 +96,21 @@ try {
   console.log(`test bitti: ${s.proxies.length} proxy, ${best.length} Elit+HTTPS`);
   for (const p of best.slice(0, 6)) if ((await cmd('connect', { id: p.id })).ok) break;
   for (const p of best.slice(1, 3)) await cmd('fav', { ids: [p.id], value: true });
+  await cmd('saveSettings', { settings: { webrtcProtect: true } });
+  const realIp = (await cmd('checkIp', { real: true })).realIp;
 
   // Gerçek IP'yi örnek adresle değiştir (ekranda görünmesin).
   const mask = (pg) =>
-    pg.evaluate((ip) => {
+    pg.evaluate((ip, real) => {
       const walk = (n) => {
         for (const c of n.childNodes) {
           if (c.nodeType === 3 && /\b\d{1,3}(\.\d{1,3}){3}\b/.test(c.textContent) && c.parentElement?.closest('#sideInfo')) c.textContent = ip;
+          else if (c.nodeType === 3 && real && c.textContent.includes(real)) c.textContent = c.textContent.split(real).join(ip);
           else if (c.nodeType === 1) walk(c);
         }
       };
       walk(document.body);
-    }, EXAMPLE_IP);
+    }, EXAMPLE_IP, realIp);
 
   const raw = {};
   for (const lang of ['tr', 'en']) {
@@ -110,6 +125,11 @@ try {
       raw[`${lang}-${name}`] = await page.screenshot();
     };
     await shot('list', () => document.querySelector('[data-cat=eliteSsl]').click());
+    // Gizlilik kontrolü (listenin üstünde): çıkış IP'si, WebRTC ve DNS.
+    await page.click('#btnMyIp');
+    await page.waitForFunction(() => !document.querySelector('#leakAgain').disabled, { timeout: 30000 });
+    await shot('privacy', () => {});
+    await page.click('#leakDlg button[value=close]');
     await shot('sites', () => {
       document.querySelector('[data-cat=alive]').click();
       const sel = document.querySelector('#fSite');
@@ -189,6 +209,7 @@ try {
     await wide('sites', '03', ...T.sites);
     await wide('sources', '04', ...T.sources);
     await wide('sync', '05', ...T.sync);
+    await wide('privacy', '06', ...T.privacy);
 
     const promo = path.join(OUT, 'promo');
     await render(
@@ -210,4 +231,5 @@ try {
   }
 } finally {
   await browser.close();
+  rmSync(EXT, { recursive: true, force: true });
 }
