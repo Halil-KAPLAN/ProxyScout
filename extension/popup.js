@@ -14,7 +14,11 @@ let savedTab = null;
 try {
   savedTab = localStorage.getItem('popupTab');
 } catch {}
-const ui = { filter: savedTab || 'eliteSsl', country: '', order: null };
+let savedCountry = '';
+try {
+  savedCountry = localStorage.getItem('popupCountry') || '';
+} catch {}
+const ui = { filter: savedTab || 'eliteSsl', country: savedCountry, order: null, fastest: null };
 if (!['alive', 'eliteSsl', 'ssl', 'fav'].includes(ui.filter)) ui.filter = 'eliteSsl'; // eski "Elit (yalnız HTTP)" sekmesi kaldırıldı
 for (const x of document.querySelectorAll('#tabs button')) x.classList.toggle('on', x.dataset.f === ui.filter);
 // Liste açılışta, sekme/ülke değişince ve test bitince sıralanır; bağlanırken yerinde kalır.
@@ -94,17 +98,22 @@ function renderList() {
   if (cs.join() !== lastCountries) {
     lastCountries = cs.join();
     $('#country').innerHTML = `<option value="">${esc(t('filter.allCountries'))}</option>` + cs.map((c) => `<option value="${esc(c)}">${flag(c)} ${esc(countryName({ country: c }))}</option>`).join('');
-    $('#country').value = cs.includes(ui.country) ? ui.country : '';
   }
+  // Hatırlanan ülke bu sekmede yoksa liste boş kalmasın: "Tüm ülkeler"e dön (kayıt korunur, sonra yine seçilir).
+  const country = cs.includes(ui.country) ? ui.country : '';
+  $('#country').value = country;
   // Gezinmeyi asıl belirleyen HTTPS süresi: varsa ona, yoksa HTTP gecikmesine göre sırala.
   const ms = (p) => p.sslMs ?? (p.latency != null ? p.latency + 1e6 : 1e9);
   const byLatency = (a, b) => ms(a) - ms(b);
   const o = ui.order;
   const list = all
-    .filter((p) => !ui.country || p.country === ui.country)
+    .filter((p) => !country || p.country === country)
     .sort(o ? (a, b) => (o.has(a.id) && o.has(b.id) ? o.get(a.id) - o.get(b.id) : o.has(a.id) ? -1 : o.has(b.id) ? 1 : byLatency(a, b)) : byLatency)
     .slice(0, 100);
   ui.order = new Map(list.map((p, i) => [p.id, i]));
+  // "En hızlısı": görünen listedeki (sekme + ülke) en hızlı, bağlı olunmayan proxy.
+  ui.fastest = [...list].sort(byLatency).find((p) => !(store.active.enabled && store.active.id === p.id)) || null;
+  $('#fastest').disabled = !ui.fastest || !!store.connecting;
   const box = $('#list');
   if (!store.ready) return;
   if (!list.length) {
@@ -157,7 +166,16 @@ $('#tabs').addEventListener('click', (e) => {
   for (const x of $('#tabs').children) x.classList.toggle('on', x === b);
   render();
 });
-$('#country').addEventListener('change', (e) => ((ui.country = e.target.value), resort(), render()));
+$('#country').addEventListener('change', (e) => {
+  ui.country = e.target.value;
+  try {
+    localStorage.setItem('popupCountry', ui.country);
+  } catch {}
+  resort();
+  render();
+});
+$('#fastest').innerHTML = icon('bolt');
+$('#fastest').addEventListener('click', () => ui.fastest && connectWithFeedback(store, ui.fastest, render));
 
 $('#toggle').addEventListener('change', async (e) => {
   const on = e.target.checked;

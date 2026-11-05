@@ -28,6 +28,8 @@ body { width: 380px; min-height: 480px; display: flex; flex-direction: column; }
 .tabs button { border: 0; background: none; padding: 4px 9px; border-radius: 6px; cursor: pointer; color: var(--muted); font-size: 12px; }
 .tabs button.on { background: var(--panel-2); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.2); }
 .list-head select { flex: 1; height: 28px; min-width: 0; font-size: 12px; }
+.list-head #fastest { flex: none; height: 28px; width: 30px; padding: 0; justify-content: center; color: var(--warn); }
+.list-head #fastest:disabled { color: var(--faint); }
 
 .list { flex: 1; overflow-y: auto; max-height: 300px; padding: 0 6px 6px; }
 .item { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 8px 8px; border-radius: 8px; cursor: pointer; }
