@@ -63,7 +63,7 @@ function unpackProxy(r) {
   return p;
 }
 
-const SOURCE_STATS = ['lastFetch', 'lastCount', 'lastNew', 'error', 'failed', 'stat'];
+const SOURCE_STATS = ['lastFetch', 'lastCount', 'lastNew', 'lastRemoved', 'error', 'failed', 'stat'];
 
 export function buildSnapshot({ proxies, settings, settingsTs, sources, sourcesTs, device }, maxProxies) {
   const list = snapshotCandidates(proxies).slice(0, maxProxies);

@@ -378,12 +378,13 @@ function renderRows() {
     // "Benim proxy'lerim" hiç dolmadıysa nasıl ekleneceğini göster (filtre yüzünden boşsa değil).
     const noMine = ui.cat === 'mine' && ![...store.proxies.values()].some((p) => p.mine);
     empty.innerHTML = noMine
-      ? `<b>${t('empty.mine.title')}</b><span>${t('empty.mine.text')}</span><button class="btn primary" id="emptyImp">${icon('upload')}<span>${t('tb.import')}</span></button>`
+      ? `<b>${t('empty.mine.title')}</b><span>${t('empty.mine.text')}</span><div class="empty-btns"><button class="btn primary" id="emptyImp">${icon('upload')}<span>${t('tb.import')}</span></button><button class="btn" id="emptyList">${icon('source')}<span>${t('imp.listBtn')}</span></button></div>`
       : none
         ? `<b>${t('empty.none.title')}</b><span>${t('empty.none.text')}</span><button class="btn primary" id="emptyDl">${icon('download')}<span>${t('tb.download')}</span></button>`
         : `<b>${t('empty.filter.title')}</b><span>${t('empty.filter.text')}</span>`;
     $('#emptyDl')?.addEventListener('click', download);
     $('#emptyImp')?.addEventListener('click', () => $('#importDlg').showModal());
+    $('#emptyList')?.addEventListener('click', goAddMineList);
   }
   for (const d of $('#thead').children) {
     d.classList.toggle('sorted', d.dataset.sort === ui.sortKey);
@@ -839,17 +840,25 @@ function renderSources() {
       const types = avail
         .map((tp) => `<label class="tchk ${on.includes(tp) ? 'on' : ''} ${tp}"><input type="checkbox" data-type="${tp}" ${on.includes(tp) ? 'checked' : ''}>${tp.toUpperCase()}</label>`)
         .join('');
+      const result = s.mine
+        ? t('src.mineResult', { n: num(s.lastCount), fresh: num(s.lastNew), removed: num(s.lastRemoved || 0) })
+        : t('src.result', { n: num(s.lastCount), fresh: num(s.lastNew) });
       const res = s.error
         ? `<span class="e" title="${esc(errorText(s.error))}">${esc(t('src.error', { err: errorText(s.error) }))}</span>`
         : s.lastFetch
-          ? `${esc(t('src.result', { n: num(s.lastCount), fresh: num(s.lastNew) }))}${s.failed ? ` <span class="w" title="${esc(t('src.error', { err: '' }))}">⚠ ${s.failed}</span>` : ''}`
+          ? `${esc(result)}${s.failed ? ` <span class="w" title="${esc(t('src.error', { err: '' }))}">⚠ ${s.failed}</span>` : ''}`
           : `<span class="muted">${esc(t('src.never'))}</span>`;
-      return `<div class="src-row ${s.enabled ? '' : 'off'}" data-i="${i}">
+      const when = [s.lastFetch && ago(s.lastFetch), s.mine && s.enabled && t('src.mineAuto')].filter(Boolean).join(' · ');
+      // Kendi eklenen kaynaklarda "Benim proxy'lerim" sonradan da açılıp kapatılabilir.
+      const mineCtl = s.custom
+        ? `<label class="mine-toggle ${s.mine ? 'on' : ''}" title="${esc(t('src.mineCheckTitle'))}"><input type="checkbox" data-k="mine" ${s.mine ? 'checked' : ''}>${icon('user')}<span>${esc(t(s.mine ? 'src.mineTag' : 'src.mineToggle'))}</span></label>`
+        : '';
+      return `<div class="src-row ${s.enabled ? '' : 'off'} ${s.mine ? 'mine' : ''}" data-i="${i}">
         <label class="switch"><input type="checkbox" data-k="enabled" ${s.enabled ? 'checked' : ''}><span></span></label>
-        <div class="src-name"><b>${esc(s.name)}${s.custom ? ` <span class="tag">${esc(t('src.custom'))}</span>` : ''}</b>
-          <a href="${esc(home)}" target="_blank" rel="noreferrer" title="${esc(s.feeds.map((f) => f.url).join('\n'))}">${esc(home.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</a></div>
+        <div class="src-name"><b>${esc(s.name)}${s.custom && !s.mine ? ` <span class="tag">${esc(t('src.custom'))}</span>` : ''}</b>
+          <a href="${esc(home)}" target="_blank" rel="noreferrer" title="${esc(s.feeds.map((f) => f.url).join('\n'))}">${esc(home.replace(/^https?:\/\//, '').replace(/\/$/, ''))}</a>${mineCtl}</div>
         <div class="types">${types}</div>
-        <div class="res">${res}<br><span class="muted">${s.lastFetch ? ago(s.lastFetch) : ''}</span></div>
+        <div class="res">${res}<br><span class="muted">${esc(when)}</span></div>
         <div>${s.custom ? `<button class="btn sm danger" data-del>${esc(t('src.delete'))}</button>` : ''}</div>
       </div>`;
     })
@@ -869,6 +878,9 @@ $('#srcTable').addEventListener('change', (e) => {
   const s = store.sources[+row.dataset.i];
   if (e.target.dataset.k === 'enabled') {
     s.enabled = e.target.checked;
+  } else if (e.target.dataset.k === 'mine') {
+    s.mine = e.target.checked;
+    if (s.mine) s.enabled = true;
   } else if (e.target.dataset.type) {
     const checked = [...row.querySelectorAll('[data-type]')].filter((x) => x.checked).map((x) => x.dataset.type);
     s.types = checked;
@@ -887,9 +899,27 @@ $('#srcTable').addEventListener('click', (e) => {
 $('#srcAdd').addEventListener('submit', (e) => {
   e.preventDefault();
   const f = e.target;
-  store.sources.unshift({ id: 'custom-' + Date.now().toString(36), name: f.name.value.trim(), feeds: [{ type: f.type.value, url: f.url.value.trim() }], enabled: true, custom: true });
-  saveSources().then(() => f.reset());
+  const mine = f.mine.checked;
+  store.sources.unshift({ id: 'custom-' + Date.now().toString(36), name: f.name.value.trim(), feeds: [{ type: f.type.value, url: f.url.value.trim() }], enabled: true, custom: true, ...(mine ? { mine: true } : {}) });
+  saveSources().then(() => {
+    f.reset();
+    if (mine) toast(t('src.mineAdded'), 'ok', 5000);
+  });
 });
+$('#mineInfoIcon').innerHTML = icon('user');
+$('#impListBtn').addEventListener('click', goAddMineList);
+
+// Benim proxy'lerim'e liste adresi eklemek için Kaynaklar'a git: form "Benim proxy'lerim" seçili olarak açılır.
+function goAddMineList() {
+  if ($('#importDlg').open) $('#importDlg').close();
+  showView('sources');
+  const f = $('#srcAdd');
+  f.mine.checked = true;
+  $('#mineInfo').classList.add('flash');
+  setTimeout(() => $('#mineInfo').classList.remove('flash'), 1600);
+  f.scrollIntoView({ block: 'center' });
+  f.name.focus();
+}
 $('#srcReset').addEventListener('click', () => {
   if (confirm(t('confirm.resetSources'))) run('resetSources', {}, t('toast.sourcesReset'));
 });

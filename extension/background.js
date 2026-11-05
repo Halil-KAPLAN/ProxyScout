@@ -448,7 +448,7 @@ async function downloadSources(job, ids) {
     if (ids ? !ids.includes(s.id) : !s.enabled) continue;
     const types = enabledTypes(s);
     if (!types.length) continue;
-    s.stat = { count: 0, fresh: 0, failed: 0, feeds: 0, error: null };
+    s.stat = { count: 0, fresh: 0, failed: 0, feeds: 0, error: null, seen: new Set() };
     for (const f of s.feeds) if (f.type === 'auto' || types.includes(f.type)) tasks.push({ s, f, types }), s.stat.feeds++;
   }
   job.phase = 'download';
@@ -462,14 +462,27 @@ async function downloadSources(job, ids) {
     try {
       const { res, text } = await fetchText(f.url, 25000, { headers: { Accept: 'text/plain,text/html,*/*' } });
       if (!res.ok) throw Object.assign(new Error('http'), { code: 'http:' + res.status });
-      let found = parseProxyList(text, f.type);
+      // "Benim proxy'lerim" kaynağı (ör. ücretli sağlayıcının liste adresi): satırlar İçe aktar'daki gibi okunur
+      // (alan adı, kullanıcı:şifre@, ip:port:kullanıcı:şifre), sınır uygulanmaz, hepsi Benim proxy'lerim'e girer.
+      let found = s.mine ? parseManualList(text, f.type === 'auto' ? 'http' : f.type) : [];
+      if (!found.length) found = parseProxyList(text, f.type);
       if (f.type === 'auto') found = found.filter((p) => types.includes(p.type));
-      if (S.settings.maxPerSource > 0) found = found.slice(0, S.settings.maxPerSource);
+      if (S.settings.maxPerSource > 0 && !s.mine) found = found.slice(0, S.settings.maxPerSource);
       let fresh = 0;
       for (const p of found) {
         const id = proxyId(p.type, p.host, p.port);
-        if (S.proxies.has(id)) continue;
+        s.stat.seen.add(id);
+        const old = S.proxies.get(id);
+        if (old) {
+          if (s.mine) {
+            if (p.user && (p.user !== old.user || p.pass !== old.pass)) Object.assign(old, { user: p.user, pass: p.pass });
+            if (!old.mine || old.source !== s.id) Object.assign(old, { mine: true, source: s.id, flagTs: Date.now() });
+            touch(old);
+          }
+          continue;
+        }
         const np = { id, ...p, status: 'new', source: s.id, added: Date.now(), ok: 0, fail: 0, streak: 0 };
+        if (s.mine) Object.assign(np, { mine: true, flagTs: Date.now() });
         const cc = geo.lookup(p.host);
         if (cc) np.country = cc;
         S.proxies.set(id, np);
@@ -493,7 +506,17 @@ async function downloadSources(job, ids) {
     if (!s.stat) continue;
     const st = s.stat;
     delete s.stat;
-    Object.assign(s, { lastFetch: Date.now(), lastCount: st.count, lastNew: st.fresh, failed: st.failed, error: st.failed === st.feeds ? st.error : null });
+    // Benim proxy'lerim kaynağı: listeden çıkan proxy'ler de kaldırılır (sağlayıcı IP'leri değiştirmiş olabilir).
+    // Yalnızca liste eksiksiz ve boş olmayan biçimde indirildiyse; favoriler ve bağlı olunan proxy korunur.
+    let removed = 0;
+    if (s.mine && !job.cancelled && !st.failed && st.count > 0) {
+      const gone = [...S.proxies.values()]
+        .filter((p) => p.source === s.id && p.mine && !st.seen.has(p.id) && !p.fav && !(S.active.enabled && S.active.id === p.id))
+        .map((p) => p.id);
+      if (gone.length) removed = removeIds(gone);
+    }
+    Object.assign(s, { lastFetch: Date.now(), lastCount: st.count, lastNew: st.fresh, lastRemoved: removed, failed: st.failed, error: st.failed === st.feeds ? st.error : null });
+    if (s.mine) log('info', 'log.mineSource', { name: s.name, n: st.count, fresh: st.fresh, removed });
   }
   await chrome.storage.local.set({ sources: S.sources });
   for (const port of ports) port.postMessage({ type: 'sources', sources: S.sources });
@@ -1007,6 +1030,17 @@ async function setupAlarms() {
   await chrome.alarms.create('watch', { periodInMinutes: Math.max(1, +S.settings.watchMinutes || 2) });
   if (+S.settings.recheckMinutes > 0) await chrome.alarms.create('recheck', { periodInMinutes: Math.max(5, +S.settings.recheckMinutes) });
   else await chrome.alarms.clear('recheck');
+  // Benim proxy'lerim kaynakları saatte bir kendiliğinden yenilenir (alarm zaten varsa zamanlaması bozulmaz).
+  if (!(await chrome.alarms.get('mineRefresh'))) await chrome.alarms.create('mineRefresh', { delayInMinutes: 1, periodInMinutes: 60 });
+}
+
+// Açık "Benim proxy'lerim" kaynaklarını (ya da verilenleri) indir; yeni gelenleri (ayar açıksa) test et.
+function refreshMineSources(ids = S.sources.filter((s) => s.mine && s.enabled).map((s) => s.id)) {
+  if (!ids.length || S.job) return;
+  startJob('job.mineRefresh', async (job) => {
+    const added = await downloadSources(job, ids);
+    if (added.length && S.settings.autoTestAfterDownload && !job.cancelled) await testProxies(job, added);
+  });
 }
 
 chrome.alarms.onAlarm.addListener(async (a) => {
@@ -1014,6 +1048,7 @@ chrome.alarms.onAlarm.addListener(async (a) => {
   if (a.name === 'watch') watchActive();
   if (a.name === 'syncPush') syncPushAll();
   if (a.name === 'syncPull') syncPullAll();
+  if (a.name === 'mineRefresh') refreshMineSources();
   if (a.name === 'recheck' && !S.job) {
     const ids = idsFor('alive');
     if (ids.length) startJob('job.recheck', (job) => testProxies(job, ids));
@@ -1368,8 +1403,15 @@ const handlers = {
   },
 
   saveSources: async ({ sources }) => {
+    // Yeni "Benim proxy'lerim" kaynağı eklendiyse ya da bir kaynak bu seçeneğe geçtiyse hemen indir.
+    const wasMine = new Set(S.sources.filter((s) => s.mine && s.enabled).map((s) => s.id));
+    const newMine = sources.filter((s) => s.mine && s.enabled && !wasMine.has(s.id)).map((s) => s.id);
     S.sources = sources;
     S.sourcesTs = Date.now();
+    // Silinen kaynağın Benim proxy'lerim'deki proxy'leri kalır; kaynakları "Elle eklendi" olur.
+    const ids = new Set(sources.map((s) => s.id));
+    for (const p of S.proxies.values()) if (p.mine && p.source && p.source !== 'manual' && !ids.has(p.source) && p.source.startsWith('custom-')) (p.source = 'manual'), touch(p);
+    if (newMine.length) refreshMineSources(newMine);
     await chrome.storage.local.set({ sources });
     await saveSyncState();
     scheduleSyncPush();
