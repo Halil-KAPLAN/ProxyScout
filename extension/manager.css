@@ -201,6 +201,19 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .dlg-row label.check { flex-direction: row; color: var(--text); }
 .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 
+/* Gizlilik kontrolü: her satır bir kontrol; solda renkli işaret (yeşil = iyi, kırmızı = sızıntı, gri = bilgi). */
+.leak { display: grid; gap: 8px; min-width: min(460px, 80vw); }
+.leak-row { display: grid; grid-template-columns: 92px 1fr; align-items: start; gap: 4px 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; border-left: 3px solid var(--faint); }
+.leak-row > b { font-size: 12.5px; }
+.leak-row > div { font-size: 13px; overflow-wrap: anywhere; }
+.leak-row small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; }
+.leak-row .btn { grid-column: 2; justify-self: start; margin-top: 4px; }
+.leak-row.ok { border-left-color: var(--ok); }
+.leak-row.bad { border-left-color: var(--err); }
+.leak-row.bad > div { color: var(--err); }
+.leak-row.bad > div small, .leak-row.bad > div .mono { color: var(--text); }
+.leak-row.wait > div, .leak-row.muted > div { color: var(--muted); }
+
 /* Tablo yana kayınca Bağlan sütunu sağda sabit kalır; devamı varsa gölge düşer. */
 .thead > .act, .row > .act { position: sticky; right: 0; align-self: stretch; display: flex; align-items: center; justify-content: flex-end; padding-right: 14px; background: var(--bg); }
 .thead > .act { background: var(--bg-2); }

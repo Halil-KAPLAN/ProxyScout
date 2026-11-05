@@ -629,18 +629,87 @@ $('#mainToggle').addEventListener('change', async (e) => {
 });
 $('#autoSwitch').addEventListener('change', (e) => run('setAutoSwitch', { value: e.target.checked }));
 $('#autoSwitchM').addEventListener('change', (e) => run('setAutoSwitch', { value: e.target.checked }));
-$('#btnMyIp').addEventListener('click', async () => {
-  const b = $('#btnMyIp');
-  b.disabled = true;
+// ---------------------------------------------------------------- gizlilik kontrolü ("IP'mi göster")
+// Çıkış IP'si, WebRTC ve DNS sızıntısı tek pencerede. WebRTC için bir STUN sunucusuna sorulur: dönen genel IP
+// proxy'ninkinden farklıysa site de aynı yolla gerçek IP'yi görebilir.
+
+// İsteğe bağlı "privacy" izni (WebRTC koruması). Tarayıcı izin penceresini yalnızca kullanıcı etkileşimi
+// sürerken açtığı için tıklama/değişim olayında ilk iş olarak, araya await koymadan çağrılmalıdır.
+const askPrivacy = () => chrome.permissions?.request?.({ permissions: ['privacy'] }).catch(() => false) ?? Promise.resolve(false);
+
+async function webrtcIps(timeout = 4000) {
+  if (typeof RTCPeerConnection === 'undefined') return null;
+  const ips = new Set();
+  let pc;
   try {
-    const r = await send('checkIp');
-    const loc = r.countryCode ? ` — ${flag(r.countryCode)} ${countryName({ country: r.countryCode })}${r.city ? ', ' + r.city : ''}${r.isp ? ` (${r.isp})` : ''}` : '';
-    toast(t('toast.myIp', { ip: r.ip, loc, ms: r.ms }), 'ok', 6000);
-  } catch (e) {
-    toast(t('toast.ipFail', { err: t(e.message) }), 'err');
+    pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+    pc.createDataChannel('leak');
+    const done = new Promise((res) => {
+      const timer = setTimeout(res, timeout);
+      pc.onicecandidate = (e) => {
+        const c = e.candidate?.candidate;
+        if (!c) return clearTimeout(timer), res();
+        const m = / typ srflx/.test(c) && /\b(\d{1,3}(?:\.\d{1,3}){3})\b/.exec(c);
+        if (m) ips.add(m[1]);
+      };
+    });
+    await pc.setLocalDescription(await pc.createOffer());
+    await done;
+  } catch {
+    return null;
   } finally {
-    b.disabled = false;
+    pc?.close();
   }
+  return [...ips];
+}
+
+const leakDlg = $('#leakDlg');
+async function leakCheck() {
+  const body = $('#leakBody');
+  const again = $('#leakAgain');
+  const p = store.active.enabled && store.proxies.get(store.active.id);
+  const on = !!p;
+  const line = (cls, title, html, extra = '') => `<div class="leak-row ${cls}"><b>${esc(title)}</b><div>${html}</div>${extra}</div>`;
+  body.innerHTML = line('wait', t('leak.exit'), esc(t('leak.checking')));
+  again.disabled = true;
+  const [ipr, rtc] = await Promise.all([send('checkIp', { real: true }).catch((e) => ({ error: e.message })), webrtcIps()]);
+  const rows = [];
+  if (ipr.error) rows.push(line('bad', t('leak.exit'), esc(t('toast.ipFail', { err: t(ipr.error) }))));
+  else {
+    const loc = ipr.countryCode ? ` — ${flag(ipr.countryCode)} ${esc(countryName({ country: ipr.countryCode }))}${ipr.city ? ', ' + esc(ipr.city) : ''}` : '';
+    const leaked = on && ipr.realIp && ipr.ip === ipr.realIp;
+    const note = !on ? 'leak.off' : leaked ? 'leak.notProxied' : 'leak.exitOk';
+    rows.push(line(!on || leaked ? 'bad' : 'ok', t('leak.exit'), `<span class="mono">${esc(ipr.ip)}</span>${loc} · ${num(ipr.ms)} ms<small>${esc(t(note))}</small>`));
+  }
+  if (rtc == null) rows.push(line('ok', t('leak.webrtc'), esc(t('leak.webrtcNone'))));
+  else if (!on) rows.push(line('muted', t('leak.webrtc'), esc(t('leak.webrtcOff'))));
+  else {
+    // Proxy'ninkinden farklı ya da gerçek IP'yle aynı her genel IP sızıntıdır.
+    const seen = rtc.filter((ip) => ip !== ipr.ip || ip === ipr.realIp);
+    rows.push(
+      seen.length
+        ? line('bad', t('leak.webrtc'), esc(t('leak.webrtcLeak', { ip: seen.join(', ') })),
+          store.settings.webrtcProtect ? '' : `<button type="button" class="btn sm primary" id="leakProtect">${esc(t('leak.protect'))}</button>`)
+        : line('ok', t('leak.webrtc'), esc(t('leak.webrtcOk'))),
+    );
+  }
+  rows.push(!on ? line('muted', t('leak.dns'), esc(t('leak.dnsOff')))
+    : p.type === 'socks4' ? line('bad', t('leak.dns'), esc(t('leak.dnsSocks4')))
+    : line('ok', t('leak.dns'), esc(t('leak.dnsOk'))));
+  body.innerHTML = rows.join('');
+  again.disabled = false;
+}
+$('#btnMyIp').addEventListener('click', () => {
+  leakDlg.showModal();
+  leakCheck();
+});
+$('#leakAgain').addEventListener('click', leakCheck);
+$('#leakBody').addEventListener('click', async (e) => {
+  if (!e.target.closest('#leakProtect')) return;
+  if (!(await askPrivacy())) return toast(t('toast.permDenied'), 'err');
+  await run('saveSettings', { settings: { webrtcProtect: true } }, t('toast.webrtcOn'));
+  $('#settingsForm').elements.webrtcProtect.checked = true;
+  setTimeout(leakCheck, 300);
 });
 
 function renderHeader() {
@@ -920,6 +989,14 @@ function fillSettings() {
     else inp.value = Array.isArray(v) ? v.join('\n') : v;
   }
 }
+
+// WebRTC korumasını açmak tarayıcıdan bir kez izin ister; verilmezse anahtar kapalı kalır.
+$('#settingsForm').elements.webrtcProtect.addEventListener('change', async (e) => {
+  if (e.target.checked && !(await askPrivacy())) {
+    e.target.checked = false;
+    toast(t('toast.permDenied'), 'err');
+  }
+});
 
 $('#settingsForm').addEventListener('submit', async (e) => {
   e.preventDefault();

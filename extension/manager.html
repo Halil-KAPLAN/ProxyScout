@@ -202,6 +202,8 @@
             <label class="check m-only" data-i18n-title="auto.title"><span class="switch"><input type="checkbox" id="autoSwitchM" /><span></span></span> <span data-i18n="auto.label"></span></label>
             <label><span data-i18n="set.watch"></span> <input class="input" type="number" name="watchMinutes" min="1" max="60" /></label>
             <label><span data-i18n="set.recheck"></span> <input class="input" type="number" name="recheckMinutes" min="0" max="1440" /></label>
+            <label class="check wide" id="webrtcRow"><span class="switch"><input type="checkbox" name="webrtcProtect" /><span></span></span> <span data-i18n="set.webrtc"></span></label>
+            <small class="wide" data-i18n="set.webrtcHelp"></small>
             <label class="wide"><span data-i18n-html="set.bypass"></span>
               <textarea class="input mono" name="bypass" rows="5"></textarea>
             </label>
@@ -247,6 +249,17 @@
       <div class="log" id="log" hidden></div>
     </main>
   </div>
+
+  <dialog id="leakDlg" class="dlg">
+    <form method="dialog">
+      <h3 data-i18n="leak.title"></h3>
+      <div class="leak" id="leakBody"></div>
+      <div class="dlg-actions">
+        <button type="button" class="btn" id="leakAgain" data-i18n="leak.again"></button>
+        <button class="btn primary" value="close" data-i18n="leak.close"></button>
+      </div>
+    </form>
+  </dialog>
 
   <dialog id="importDlg" class="dlg">
     <form method="dialog" id="importForm">

@@ -27,6 +27,7 @@ const DEFAULT_SETTINGS = {
   bypass: ['<local>', 'localhost', '127.0.0.1', '10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '*.local'],
   syncChrome: true,       // listeyi Chrome'un Google hesabı senkronuyla diğer cihazlara taşı
   driveClientId: '',      // Google Drive senkronu için OAuth istemci kimliği (cihaza özel)
+  webrtcProtect: false,   // proxy açıkken WebRTC'nin gerçek IP'yi göstermesini engelle (isteğe bağlı "privacy" izni)
 };
 
 const IPV4 = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
@@ -301,9 +302,26 @@ if (IS_FIREFOX) {
   );
 }
 
+// WebRTC, proxy'yi atlayıp UDP ile gerçek IP'yi sitelere gösterebilir. Koruma açıksa ve proxy bağlıyken
+// tarayıcıya proxy'den geçmeyen UDP'yi kullanmamasını söyleriz; proxy kapanınca ayar tarayıcıya geri bırakılır.
+// chrome.privacy yalnızca kullanıcı isteğe bağlı "privacy" iznini verdiyse vardır.
+let webrtcOn = null;
+async function applyWebrtc(on) {
+  const pol = chrome.privacy?.network?.webRTCIPHandlingPolicy;
+  if (!pol || on === webrtcOn) return;
+  try {
+    if (on) await pol.set({ value: 'disable_non_proxied_udp' });
+    else await pol.clear({});
+    webrtcOn = on;
+  } catch (e) {
+    log('err', 'log.webrtcFail', { err: e.message });
+  }
+}
+
 async function applyProxy(newHostMap) {
   if (newHostMap) hostMap = newHostMap;
   const act = S.active.enabled && S.proxies.get(S.active.id);
+  applyWebrtc(!!(act && S.settings.webrtcProtect));
   if (IS_FIREFOX) {
     S.control = 'controllable_by_this_extension';
     const socksAuth = {};
@@ -1378,7 +1396,7 @@ const handlers = {
   },
 
   // Şu anki çıkış IP'sini (aktif proxy üzerinden) ve konumunu göster.
-  checkIp: async () => {
+  checkIp: async ({ real } = {}) => {
     let ip, ms;
     for (const u of ['https://api.ipify.org/', 'https://icanhazip.com/', 'http://httpbin.org/ip', 'https://ifconfig.me/ip']) {
       try {
@@ -1389,7 +1407,10 @@ const handlers = {
       } catch {}
     }
     if (!ip) throw new Error('e.ipFailed');
-    return { ip, ms, ...((await geoOne(ip)) || {}) };
+    // Gerçek IP de (proxy'yi atlayarak) sorulur: gizlilik kontrolü çıkış IP'siyle ve WebRTC'nin gösterdiğiyle karşılaştırır.
+    const realIp = real ? (await getRealIp()) || S.realIp : S.realIp;
+    if (realIp) S.realIp = realIp;
+    return { ip, ms, realIp, ...((await geoOne(ip)) || {}) };
   },
 };
 

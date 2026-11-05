@@ -108,6 +108,7 @@ export function firefoxManifest(m) {
     default_locale: m.default_locale,
     homepage_url: m.homepage_url,
     permissions: [...permissions, ...(m.host_permissions || [])],
+    ...(m.optional_permissions ? { optional_permissions: m.optional_permissions } : {}),
     background: { page: 'background.html', persistent: true },
     browser_action: m.action,
     options_ui: m.options_ui,
