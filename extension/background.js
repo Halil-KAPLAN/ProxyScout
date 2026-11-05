@@ -1256,6 +1256,22 @@ const handlers = {
     return n;
   },
 
+  // Kullanıcı bir proxy'yi elle "Ölüler"e taşır (ör. sitesinde çalışmıyor). Bağlı olunan proxy taşınmaz.
+  markDead: ({ ids }) => {
+    let n = 0;
+    for (const id of ids) {
+      const p = S.proxies.get(id);
+      if (!p || p.status === 'dead' || (id === S.active.id && S.active.enabled)) continue;
+      Object.assign(p, { status: 'dead', latency: null, error: 'manual', lastCheck: Date.now() });
+      touch(p);
+      n++;
+    }
+    scheduleSave();
+    scheduleSyncPush();
+    if (n) log('info', 'log.markedDead', { n });
+    return n;
+  },
+
   fav: ({ ids, value }) => {
     for (const id of ids) {
       const p = S.proxies.get(id);

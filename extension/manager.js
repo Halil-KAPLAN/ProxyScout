@@ -236,6 +236,12 @@ function renderCats() {
     (c) => `<a href="#" class="cat c-${c.id} ${c.parent ? 'sub' : ''} ${ui.view === 'list' && ui.cat === c.id ? 'active' : ''}" data-cat="${c.id}" title="${c.hint ? esc(t('cat.' + c.id + '.hint')) : ''}">
       ${c.parent ? '' : icon(c.icon)}<span>${esc(t('cat.' + c.id))}</span><span class="n">${num(counts[c.id])}</span></a>`,
   ).join('');
+  // "Benim proxy'lerim"de öne çıkan eylem içe aktarmadır: renkli düğme İndir'den İçe aktar'a geçer
+  // (dar ekranda araç çubuğunda gizli olan İçe aktar burada görünür).
+  const mine = ui.view === 'list' && ui.cat === 'mine';
+  document.body.classList.toggle('cat-mine', mine);
+  $('#btnImport').classList.toggle('primary', mine);
+  $('#btnDownload').classList.toggle('primary', !mine);
   $('#nSources').textContent = store.sources.filter((s) => s.enabled).length + '/' + store.sources.length;
   navSources.classList.toggle('active', ui.view === 'sources');
   navSettings.classList.toggle('active', ui.view === 'settings');
@@ -315,6 +321,9 @@ function rowHtml(p, i) {
     : isActive
       ? `<span class="chip ${store.active.failed ? 'dead' : 'alive'} plain connected-tag" title="${esc(t('toggle.title'))}">${t('row.connected')}</span>`
       : `<button class="btn sm connect-btn" data-connect>${t('row.connect')}</button>`;
+  // Ölülere taşı: zaten ölüyse, bağlıysa ya da bağlanılıyorsa gösterilmez.
+  const deadBtn = p.status === 'dead' || isActive || isConnecting ? ''
+    : `<button class="btn sm dead-btn" data-dead title="${esc(t('row.markDead'))}" aria-label="${esc(t('row.markDead'))}">${icon('x')}</button>`;
   return `<div class="row ${ui.selected.has(p.id) ? 'sel' : ''} ${isActive ? 'active' : ''} ${isConnecting ? 'connecting' : ''}" data-i="${i}" data-id="${esc(p.id)}" style="top:${i * ROW_H}px" title="${esc(title)}">
     <div><button class="fav ${p.fav ? 'on' : ''}" data-fav title="${t('row.fav')}">${icon('star')}</button></div>
     <div class="addr">${esc(addr(p))}${p.user ? `<span class="lock" title="${t('row.auth')}">🔒</span>` : ''}</div>
@@ -326,9 +335,9 @@ function rowHtml(p, i) {
     <div title="${esc(geoTitle)}">${p.country ? `<span class="flag">${flag(p.country)}</span>${esc(countryName(p))}${p.city ? `<span class="city">, ${esc(p.city)}</span>` : ''}` : ''}</div>
     <div>${up == null ? '' : `<span class="upbar"><i><b style="width:${up}%"></b></i>${up}%</span>`}</div>
     <div class="muted">${p.lastCheck ? ago(p.lastCheck) : '—'}</div>
-    <div class="muted">${esc(sourceName(p.source))}</div>
+    <div class="muted" title="${esc(sourceName(p.source))}">${esc(sourceName(p.source))}</div>
     <div class="sites"><div class="sl">${sitesHtml(p)}</div></div>
-    <div class="act">${btn}</div>
+    <div class="act">${btn}${deadBtn}</div>
   </div>`;
 }
 
@@ -350,10 +359,15 @@ function renderRows() {
   empty.hidden = n > 0;
   if (!n) {
     const none = store.proxies.size === 0;
-    empty.innerHTML = none
-      ? `<b>${t('empty.none.title')}</b><span>${t('empty.none.text')}</span><button class="btn primary" id="emptyDl">${icon('download')}<span>${t('tb.download')}</span></button>`
-      : `<b>${t('empty.filter.title')}</b><span>${t('empty.filter.text')}</span>`;
+    // "Benim proxy'lerim" hiç dolmadıysa nasıl ekleneceğini göster (filtre yüzünden boşsa değil).
+    const noMine = ui.cat === 'mine' && ![...store.proxies.values()].some((p) => p.mine);
+    empty.innerHTML = noMine
+      ? `<b>${t('empty.mine.title')}</b><span>${t('empty.mine.text')}</span><button class="btn primary" id="emptyImp">${icon('upload')}<span>${t('tb.import')}</span></button>`
+      : none
+        ? `<b>${t('empty.none.title')}</b><span>${t('empty.none.text')}</span><button class="btn primary" id="emptyDl">${icon('download')}<span>${t('tb.download')}</span></button>`
+        : `<b>${t('empty.filter.title')}</b><span>${t('empty.filter.text')}</span>`;
     $('#emptyDl')?.addEventListener('click', download);
+    $('#emptyImp')?.addEventListener('click', () => $('#importDlg').showModal());
   }
   for (const d of $('#thead').children) {
     d.classList.toggle('sorted', d.dataset.sort === ui.sortKey);
@@ -452,6 +466,11 @@ rowsEl.addEventListener('click', (e) => {
   if (!p) return;
   if (e.target.closest('[data-fav]')) return void send('fav', { ids: [p.id], value: !p.fav });
   if (e.target.closest('[data-connect]')) return void toggleConnect(p);
+  if (e.target.closest('[data-dead]')) {
+    // Satır çoklu seçimin parçasıysa tüm seçili satırlar taşınır.
+    const ids = ui.selected.has(p.id) ? [...ui.selected] : [p.id];
+    return void run('markDead', { ids }, (n) => t('toast.markedDead', { n: num(n) }));
+  }
   const i = +row.dataset.i;
   if (e.shiftKey && ui.anchor != null) {
     const [a, b] = [Math.min(ui.anchor, i), Math.max(ui.anchor, i)];
@@ -802,6 +821,20 @@ function renderSiteFilter() {
   sel.innerHTML = `<option value="">${esc(t('filter.allSites'))}</option>` + urls.map((u) => `<option value="${esc(u)}">${esc(t('filter.worksOn', { site: siteInfo(u).name }))}</option>`).join('');
   sel.value = ui.site;
   sel.hidden = !store.settings.siteTest || !urls.length;
+  sitesWidth(urls);
+}
+
+// Siteler sütunu en fazla, açık sitelerin rozetleri ("FAN 9.9s") yan yana sığacak kadar genişler; daha dar
+// kalırsa hücre yana kayar. Sınır: çok sayıda site eklense de sütun ekranı kaplamasın.
+function sitesWidth(urls) {
+  const probe = document.createElement('div');
+  probe.className = 'row';
+  probe.style.cssText = 'position:absolute;visibility:hidden;display:block;width:auto';
+  probe.innerHTML = `<div class="sites"><div class="sl" style="display:inline-flex">${urls.map((u) => `<span class="site">${esc(siteInfo(u).short)} 9.9s</span>`).join('')}</div></div>`;
+  rowsEl.append(probe);
+  const w = Math.ceil(probe.querySelector('.sl').getBoundingClientRect().width);
+  probe.remove();
+  tbody.style.setProperty('--sites-w', Math.min(Math.max(w, 70), 440) + 'px');
 }
 
 function renderSiteSettings() {

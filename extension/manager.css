@@ -79,9 +79,14 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 
 /* Tablo */
 .table { flex: 1; min-height: 0; display: flex; flex-direction: column; position: relative; }
+/* Sütunlar içeriklerinin en genişi kadar (iki dilde ölçüldü; örn. adres "255.255.255.255:65535🔒").
+   Ülke, kaynak ve siteler aralık içinde esner; siteler en fazla açık sitelerin rozetleri kadar genişler (--sites-w,
+   JS ölçer). Artan yer Bağlan sütununa gider; en küçük toplamdan dar ekranda tablo yana kayar. */
 .thead, .row {
-  display: grid; align-items: center; column-gap: 10px; padding: 0 14px;
-  grid-template-columns: 22px minmax(150px, 1.2fr) 66px 108px 78px 72px 70px minmax(150px, 1.3fr) 66px 84px minmax(80px, .6fr) minmax(130px, 1fr) 100px;
+  --sites-min: min(150px, var(--sites-w, 220px));
+  display: grid; align-items: center; column-gap: 10px; padding: 0 0 0 14px;
+  grid-template-columns: 22px 176px 56px 88px 82px 64px 62px minmax(120px, 260px) 58px 80px minmax(100px, 160px) minmax(var(--sites-min), var(--sites-w, 220px)) minmax(130px, 1fr);
+  min-width: calc(1038px + var(--sites-min) + 12 * 10px + 14px);
 }
 .thead { position: sticky; top: 0; z-index: 3; height: 34px; font-size: 11.5px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; border-bottom: 1px solid var(--line); background: var(--bg-2); }
 .thead > div { cursor: pointer; user-select: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -90,7 +95,7 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .thead .sorted .hl::after { content: ' ↓'; }
 .thead .sorted.asc .hl::after { content: ' ↑'; }
 .hf { display: none; }
-.tbody { flex: 1; overflow-y: auto; position: relative; }
+.tbody { flex: 1; overflow: auto; position: relative; }
 .spacer { width: 1px; }
 .rows { position: absolute; left: 0; right: 0; top: 34px; } /* başlığın altından başlar */
 .rows .row { position: absolute; left: 0; right: 0; }
@@ -112,7 +117,11 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .upbar i { display: block; width: 24px; height: 5px; border-radius: 99px; background: var(--line); overflow: hidden; position: relative; }
 .upbar i b { position: absolute; inset: 0 auto 0 0; background: var(--ok); }
 .row .act { text-align: right; }
-.row .connect-btn { visibility: hidden; }
+.row .connect-btn, .row .dead-btn { visibility: hidden; }
+.row:hover .dead-btn, .row.sel .dead-btn { visibility: visible; }
+.row .act { gap: 6px; }
+.row .dead-btn { width: 26px; padding: 0; justify-content: center; color: var(--muted); }
+.row .dead-btn:hover { color: var(--err); border-color: color-mix(in srgb, var(--err) 45%, var(--line-2)); }
 .row:hover .connect-btn, .row.active .connect-btn, .row.sel .connect-btn { visibility: visible; }
 .row.active .connect-btn { color: var(--err); }
 
@@ -191,15 +200,16 @@ main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .dlg-row label.check { flex-direction: row; color: var(--text); }
 .dlg-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
 
-/* Orta genişlikte "Başarı", "Son test" ve "Kaynak" gizlenir; Siteler sütunu yatay kaydırmasız sığar. */
-@media (max-width: 1500px) and (min-width: 1101px) {
-  .thead, .row { grid-template-columns: 22px minmax(150px, 1.2fr) 66px 108px 78px 72px 70px minmax(120px, 1.1fr) minmax(200px, 1.4fr) 100px; }
-  .thead > :nth-child(9), .row > :nth-child(9), .thead > :nth-child(10), .row > :nth-child(10), .thead > :nth-child(11), .row > :nth-child(11) { display: none; }
-}
+/* Tablo yana kayınca Bağlan sütunu sağda sabit kalır; devamı varsa gölge düşer. */
+.thead > .act, .row > .act { position: sticky; right: 0; align-self: stretch; display: flex; align-items: center; justify-content: flex-end; padding-right: 14px; background: var(--bg); }
+.thead > .act { background: var(--bg-2); }
+.row:hover > .act { background: linear-gradient(var(--row-hover), var(--row-hover)), var(--bg); }
+.row.sel > .act { background: linear-gradient(var(--row-sel), var(--row-sel)), var(--bg); }
+.row.active > .act { background: linear-gradient(var(--ok-soft), var(--ok-soft)), var(--bg); }
+.row.connecting > .act { background: linear-gradient(var(--warn-soft), var(--warn-soft)), var(--bg); }
+#tbody.more-r .thead > .act, #tbody.more-r .row > .act { box-shadow: -14px 0 12px -10px rgba(0, 0, 0, .75); }
 
 @media (max-width: 1100px) {
-  .thead, .row { grid-template-columns: 22px minmax(150px, 1.5fr) 62px 110px 70px 46px 70px minmax(100px, 1fr) minmax(110px, .9fr) 92px; }
-  .thead > :nth-child(9), .row > :nth-child(9), .thead > :nth-child(10), .row > :nth-child(10), .thead > :nth-child(11), .row > :nth-child(11) { display: none; }
   .conn { flex-basis: 300px; }
 }
 
@@ -318,6 +328,7 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
   .toolbar::-webkit-scrollbar { display: none; }
   .toolbar > * { flex: none; }
   .tb-sep, .tb-fill, .tb-filters, #btnImport { display: none; }
+  body.cat-mine #btnImport { display: inline-flex; }
   .l-long { display: none; }
   .l-short { display: inline; }
   .menu { position: fixed; top: auto; left: 10px; right: 10px; bottom: 10px; min-width: 0; padding: 6px; z-index: 50; }
@@ -333,7 +344,7 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
   .thead .filtered .hf { color: var(--accent-2); background: var(--blue-soft); }
   .thead .filtered .hf svg { fill: currentColor; }
   /* Tablo: adres, gecikme, ülke, tür, siteler; sığmayan sütunlar yana kayar, Bağlan sütunu sağda sabit kalır. */
-  .thead, .row { grid-template-columns: 20px 140px 64px 120px 66px 190px 68px; column-gap: 8px; padding: 0 0 0 10px; width: max-content; min-width: 100%; }
+  .thead, .row { grid-template-columns: 20px 140px 64px 120px 66px 190px 98px; column-gap: 8px; padding: 0 0 0 10px; width: max-content; min-width: 100%; }
   .thead > :nth-child(3), .row > :nth-child(3) { order: 1; } /* tür, ülkenin sağına */
   .thead > :nth-child(12), .row > :nth-child(12) { order: 2; }
   .thead > .act, .row > .act { order: 3; }
@@ -344,12 +355,7 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
   .thead > :nth-child(4), .row > :nth-child(4), .thead > :nth-child(5), .row > :nth-child(5),
   .thead > :nth-child(6), .row > :nth-child(6), .thead > :nth-child(9), .row > :nth-child(9),
   .thead > :nth-child(10), .row > :nth-child(10), .thead > :nth-child(11), .row > :nth-child(11) { display: none; }
-  .thead > .act, .row > .act { position: sticky; right: 0; align-self: stretch; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; background: var(--bg); }
-  .thead > .act { background: var(--bg-2); }
-  .row.sel > .act { background: linear-gradient(var(--row-sel), var(--row-sel)), var(--bg); }
-  .row.active > .act { background: linear-gradient(var(--ok-soft), var(--ok-soft)), var(--bg); }
-  .row.connecting > .act { background: linear-gradient(var(--warn-soft), var(--warn-soft)), var(--bg); }
-  #tbody.more-r .thead > .act, #tbody.more-r .row > .act { box-shadow: -14px 0 12px -10px rgba(0, 0, 0, .75); }
+  .thead > .act, .row > .act { padding-right: 8px; }
   .row .connected-tag { display: none; }
   /* Yana kayan satırlar (kategoriler, araç çubuğu): devamı olan kenar soluklaşır ve ok gösterir. */
   /* --pad: alanın yatay iç boşluğu; yapışkan ok bu boşluk kadar içeride durduğu için eksi değerle kenara itilir. */
@@ -384,5 +390,5 @@ body.grabbing, body.grabbing * { cursor: grabbing !important; }
 }
 /* Dokunmatik ekranda üzerine gelme yok: bağlan düğmesi her satırda görünür. */
 @media (hover: none) {
-  .row .connect-btn { visibility: visible; }
+  .row .connect-btn, .row .dead-btn { visibility: visible; }
 }
