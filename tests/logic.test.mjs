@@ -2,8 +2,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
-import { parseProxyList, parseManualList } from '../extension/lib/parse.js';
-import { buildPac, checkMarker, directMarker, directiveFor, activeCheckHost } from '../extension/lib/pac.js';
+import { parseProxyList, parseManualList, formatProxy } from '../extension/lib/parse.js';
+import { buildPac, checkMarker, directMarker, directiveFor, activeCheckHost, cleanSiteEntry } from '../extension/lib/pac.js';
 
 test('düz liste, önekler ve hatalı satırlar', () => {
   const txt = '1.2.3.4:8080\n5.6.7.8:3128:Indonesia\nsocks5://9.9.9.9:1080\n999.1.1.1:80\n0.0.0.0:80\n1.2.3.4:8080\n10.0.0.1 8000\n';
@@ -32,6 +32,26 @@ test('elle içe aktarma biçimleri', () => {
   assert.deepEqual(r[0], { type: 'http', host: '1.2.3.4', port: 8080, user: 'user', pass: 'pa@ss' });
   assert.deepEqual(r[1], { type: 'http', host: '5.6.7.8', port: 3128, user: 'bob', pass: 'secret' });
   assert.equal(r[2].type, 'socks5');
+});
+
+test('elle içe aktarma: ":" içeren şifre, sütunlu satırlar, hata metinleri', () => {
+  const r = parseManualList('u:p:a:ss@2.2.2.2:81\n3.3.3.3:82:u:p:x\n1.2.3.4 8080 US elite\n9.9.9.9:80 US elite\nError 401: Unauthorized', 'http');
+  assert.deepEqual(r, [
+    { type: 'http', host: '2.2.2.2', port: 81, user: 'u', pass: 'p:a:ss' },
+    { type: 'http', host: '3.3.3.3', port: 82, user: 'u', pass: 'p:x' },
+    { type: 'http', host: '1.2.3.4', port: 8080 }, // ülke/tür sütunları kimlik bilgisi sayılmaz
+    { type: 'http', host: '9.9.9.9', port: 80 },
+  ]);
+  // Dosyaya kaydedilen biçim aynen geri okunur.
+  const p = { type: 'socks5', host: '1.1.1.1', port: 1080, user: 'a', pass: 'x:y@z' };
+  assert.deepEqual(parseManualList(formatProxy(p, true), 'http'), [p]);
+});
+
+test('"yalnızca bu siteler" girişleri alan adına indirilir', () => {
+  assert.deepEqual(
+    ['https://www.YouTube.com/watch?v=1', 'youtube.com/', 'example.com:443', '*.example.org', '10.0.0.0/8', '<local>'].map(cleanSiteEntry),
+    ['youtube.com', 'youtube.com', 'example.com', '*.example.org', '10.0.0.0/8', '<local>'],
+  );
 });
 
 function pacFn(opts) {

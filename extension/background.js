@@ -4,7 +4,7 @@ import { IS_FIREFOX, HAS_BROWSER_SYNC, HAS_WEB_AUTH, authRedirectUrl, credsSyncA
 import { DEFAULT_SOURCES, enabledTypes } from './lib/sources.js';
 import { DEFAULT_SITES, siteHost } from './lib/sites.js';
 import { parseProxyList, parseManualList, proxyId } from './lib/parse.js';
-import { buildPac, findProxy, toProxyInfo, directiveFor, checkMarker, directMarker, httpsCheckHost, activeCheckHost } from './lib/pac.js';
+import { buildPac, findProxy, toProxyInfo, directiveFor, checkMarker, directMarker, httpsCheckHost, activeCheckHost, cleanSiteEntry } from './lib/pac.js';
 import { t, has, setLang, resolveLang } from './lib/i18n.js';
 import { loadGeo } from './lib/geoip.js';
 import { buildSnapshot, mergeSnapshot, packForChromeSync, unpackFromChromeSync, SYNC_PREFIX } from './lib/sync.js';
@@ -310,7 +310,8 @@ if (IS_FIREFOX) {
 let webrtcOn = null;
 async function applyWebrtc(on) {
   const pol = chrome.privacy?.network?.webRTCIPHandlingPolicy;
-  if (!pol || on === webrtcOn) return;
+  if (!pol) return void (webrtcOn = null); // izin yok (ya da geri alındı): yeniden verilince baştan uygulansın
+  if (on === webrtcOn) return;
   try {
     if (on) await pol.set({ value: 'disable_non_proxied_udp' });
     else await pol.clear({});
@@ -324,7 +325,10 @@ async function applyWebrtc(on) {
 const exitIpOf = (text) => (/^ip=([\d.]+)$/m.exec(text) || [])[1] || (text.match(IPV4) || []).pop();
 
 // "Yalnızca bu siteler" açık ve liste doluysa liste, değilse null (tüm trafik proxy'den).
-const onlyList = () => (S.settings.routeOnly && S.settings.onlySites?.length ? S.settings.onlySites : null);
+const onlyList = () => {
+  const list = S.settings.routeOnly ? (S.settings.onlySites || []).map(cleanSiteEntry).filter(Boolean) : [];
+  return list.length ? list : null;
+};
 
 async function applyProxy(newHostMap) {
   if (newHostMap) hostMap = newHostMap;
@@ -334,14 +338,14 @@ async function applyProxy(newHostMap) {
     S.control = 'controllable_by_this_extension';
     const socksAuth = {};
     for (const p of S.proxies.values()) if (p.user && p.type === 'socks5') socksAuth[p.host + ':' + p.port] = { user: p.user, pass: p.pass || '' };
-    ffProxy = act || S.job ? { token: S.token, active: act ? directiveFor(act) : null, bypass: S.settings.bypass, only: onlyList(), hostMap, socksAuth } : null;
+    ffProxy = act || jobPac() ? { token: S.token, active: act ? directiveFor(act) : null, bypass: S.settings.bypass, only: onlyList(), hostMap, socksAuth } : null;
     updateBadge();
     return;
   }
   try {
     const cur = await chrome.proxy.settings.get({});
     S.control = cur.levelOfControl;
-    if (!act && !S.job) {
+    if (!act && !jobPac()) {
       await chrome.proxy.settings.clear({ scope: 'regular' });
     } else {
       const data = buildPac({ token: S.token, active: act ? directiveFor(act) : null, bypass: S.settings.bypass, only: onlyList(), hostMap });
@@ -416,9 +420,13 @@ else chrome.webRequest.onAuthRequired.addListener((d, callback) => callback(prox
 // ---------------------------------------------------------------- işler
 
 // label: iş adı dil anahtarı (ör. "job.download").
-function startJob(label, fn) {
+// noPac: işin tarayıcı proxy ayarına dokunması gerekmez (yalnızca liste indirme). Proxy kapalıyken saatlik
+// arka plan yenilemesi sistemin ya da başka bir eklentinin proxy ayarını bu sürede ezmesin diye.
+const jobPac = () => !!(S.job && !S.job.noPac);
+
+function startJob(label, fn, { noPac = false } = {}) {
   if (S.job) throw new Error('e.jobRunning');
-  S.job = { label, phase: 'start', total: 0, done: 0, alive: 0, dead: 0, cancelled: false, started: Date.now(), ctrls: new Set() };
+  S.job = { label, phase: 'start', total: 0, done: 0, alive: 0, dead: 0, cancelled: false, started: Date.now(), ctrls: new Set(), noPac };
   const ka = setInterval(() => chrome.runtime.getPlatformInfo(), 20000); // servis çalışanını uyanık tut
   scheduleFlush();
   (async () => {
@@ -437,6 +445,12 @@ function startJob(label, fn) {
       log('info', j.cancelled ? 'log.jobStopped' : 'log.jobDone', { label: '@' + j.label, s: Math.round((Date.now() - j.started) / 1000) });
       flush();
       scheduleSyncPush();
+      // İş sürerken eklenen Benim proxy'lerim kaynakları beklemiş olabilir.
+      if (mineQueue.size) {
+        const ids = [...mineQueue];
+        mineQueue.clear();
+        refreshMineSources(ids, { user: true });
+      }
     }
   })();
 }
@@ -464,7 +478,8 @@ async function downloadSources(job, ids) {
       if (!res.ok) throw Object.assign(new Error('http'), { code: 'http:' + res.status });
       // "Benim proxy'lerim" kaynağı (ör. ücretli sağlayıcının liste adresi): satırlar İçe aktar'daki gibi okunur
       // (alan adı, kullanıcı:şifre@, ip:port:kullanıcı:şifre), sınır uygulanmaz, hepsi Benim proxy'lerim'e girer.
-      let found = s.mine ? parseManualList(text, f.type === 'auto' ? 'http' : f.type) : [];
+      // Yalnızca IP ya da noktalı alan adı kabul edilir: "Limit 1000 reached" gibi bir hata metni proxy sayılmasın.
+      let found = s.mine ? parseManualList(text, f.type === 'auto' ? 'http' : f.type).filter((p) => p.host.includes('.')) : [];
       if (!found.length) found = parseProxyList(text, f.type);
       if (f.type === 'auto') found = found.filter((p) => types.includes(p.type));
       if (S.settings.maxPerSource > 0 && !s.mine) found = found.slice(0, S.settings.maxPerSource);
@@ -474,7 +489,9 @@ async function downloadSources(job, ids) {
         s.stat.seen.add(id);
         const old = S.proxies.get(id);
         if (old) {
-          if (s.mine) {
+          // Ücretsiz kaynaktan gelmiş bir proxy bu listeye geçer. Kullanıcının elle eklediği ya da başka bir
+          // Benim proxy'lerim kaynağına ait olan proxy'ye dokunulmaz (sonradan bu listeden çıkınca silinmesin).
+          if (s.mine && (!old.mine || old.source === s.id)) {
             if (p.user && (p.user !== old.user || p.pass !== old.pass)) Object.assign(old, { user: p.user, pass: p.pass });
             if (!old.mine || old.source !== s.id) Object.assign(old, { mine: true, source: s.id, flagTs: Date.now() });
             touch(old);
@@ -508,12 +525,13 @@ async function downloadSources(job, ids) {
     delete s.stat;
     // Benim proxy'lerim kaynağı: listeden çıkan proxy'ler de kaldırılır (sağlayıcı IP'leri değiştirmiş olabilir).
     // Yalnızca liste eksiksiz ve boş olmayan biçimde indirildiyse; favoriler ve bağlı olunan proxy korunur.
+    // Liste birden yarısından fazla küçüldüyse (sağlayıcı geçici olarak eksik/yanlış yanıt vermiş olabilir) silinmez.
     let removed = 0;
-    if (s.mine && !job.cancelled && !st.failed && st.count > 0) {
-      const gone = [...S.proxies.values()]
-        .filter((p) => p.source === s.id && p.mine && !st.seen.has(p.id) && !p.fav && !(S.active.enabled && S.active.id === p.id))
-        .map((p) => p.id);
-      if (gone.length) removed = removeIds(gone);
+    if (s.mine && !job.cancelled && !st.failed && st.count > 0 && st.seen instanceof Set) {
+      const owned = [...S.proxies.values()].filter((p) => p.source === s.id && p.mine);
+      const gone = owned.filter((p) => !st.seen.has(p.id) && !p.fav && !(S.active.enabled && S.active.id === p.id)).map((p) => p.id);
+      if (gone.length && (owned.length < 4 || st.count * 2 >= owned.length)) removed = removeIds(gone);
+      else if (gone.length) log('warn', 'log.mineShrunk', { name: s.name, n: st.count, had: owned.length });
     }
     Object.assign(s, { lastFetch: Date.now(), lastCount: st.count, lastNew: st.fresh, lastRemoved: removed, failed: st.failed, error: st.failed === st.feeds ? st.error : null });
     if (s.mine) log('info', 'log.mineSource', { name: s.name, n: st.count, fresh: st.fresh, removed });
@@ -1035,12 +1053,18 @@ async function setupAlarms() {
 }
 
 // Açık "Benim proxy'lerim" kaynaklarını (ya da verilenleri) indir; yeni gelenleri (ayar açıksa) test et.
-function refreshMineSources(ids = S.sources.filter((s) => s.mine && s.enabled).map((s) => s.id)) {
-  if (!ids.length || S.job) return;
+// user: kullanıcı kaynağı yeni ekledi/açtı (indirme normal iş gibi, yeni gelenler ayara göre test edilir).
+// Saatlik arka plan yenilemesi ise proxy ayarına dokunmaz; yeni gelenleri yalnızca proxy zaten açıksa test eder.
+// Başka bir iş sürüyorsa kaynak sıraya alınır ve o iş bitince indirilir.
+const mineQueue = new Set();
+function refreshMineSources(ids = S.sources.filter((s) => s.mine && s.enabled).map((s) => s.id), { user = false } = {}) {
+  if (!ids.length) return;
+  if (S.job) return void ids.forEach((id) => mineQueue.add(id));
+  const bg = !user && !S.active.enabled;
   startJob('job.mineRefresh', async (job) => {
     const added = await downloadSources(job, ids);
-    if (added.length && S.settings.autoTestAfterDownload && !job.cancelled) await testProxies(job, added);
-  });
+    if (added.length && S.settings.autoTestAfterDownload && !job.cancelled && !bg) await testProxies(job, added);
+  }, { noPac: bg });
 }
 
 chrome.alarms.onAlarm.addListener(async (a) => {
@@ -1403,6 +1427,9 @@ const handlers = {
   },
 
   saveSources: async ({ sources }) => {
+    // Arayüzden gelen kopyada indirme sırasındaki geçici sayaçlar (stat) bozulmuş olabilir: yerelinkini koru.
+    const cur = new Map(S.sources.map((x) => [x.id, x]));
+    sources = sources.map(({ stat, ...x }) => (cur.get(x.id)?.stat ? { ...x, stat: cur.get(x.id).stat } : x));
     // Yeni "Benim proxy'lerim" kaynağı eklendiyse ya da bir kaynak bu seçeneğe geçtiyse hemen indir.
     const wasMine = new Set(S.sources.filter((s) => s.mine && s.enabled).map((s) => s.id));
     const newMine = sources.filter((s) => s.mine && s.enabled && !wasMine.has(s.id)).map((s) => s.id);
@@ -1411,7 +1438,7 @@ const handlers = {
     // Silinen kaynağın Benim proxy'lerim'deki proxy'leri kalır; kaynakları "Elle eklendi" olur.
     const ids = new Set(sources.map((s) => s.id));
     for (const p of S.proxies.values()) if (p.mine && p.source && p.source !== 'manual' && !ids.has(p.source) && p.source.startsWith('custom-')) (p.source = 'manual'), touch(p);
-    if (newMine.length) refreshMineSources(newMine);
+    if (newMine.length) refreshMineSources(newMine, { user: true });
     await chrome.storage.local.set({ sources });
     await saveSyncState();
     scheduleSyncPush();

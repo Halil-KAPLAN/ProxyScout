@@ -5,6 +5,7 @@ import {
 } from './lib/ui.js';
 import { icon } from './lib/icons.js';
 import { formatProxy } from './lib/parse.js';
+import { cleanSiteEntry } from './lib/pac.js';
 import { sourceTypes, enabledTypes, sourceHome } from './lib/sources.js';
 import { siteInfo, siteList, normalizeSiteUrl, shortMs } from './lib/sites.js';
 import { IS_FIREFOX, credsSyncAllowed, requestCredsSync, storeReviewUrl } from './lib/platform.js';
@@ -281,6 +282,7 @@ function showView(v) {
   document.body.dataset.view = v;
   for (const s of document.querySelectorAll('.view')) s.hidden = s.id !== 'view-' + v;
   for (const b of document.querySelectorAll('#mTabs [data-mview]')) b.classList.toggle('on', b.dataset.mview === v);
+  if (v === 'list' && store.ready) sitesWidth(enabledSites());
   dataChanged();
 }
 
@@ -678,8 +680,9 @@ async function webrtcIps(timeout = 4000) {
       pc.onicecandidate = (e) => {
         const c = e.candidate?.candidate;
         if (!c) return clearTimeout(timer), res();
-        const m = / typ srflx/.test(c) && /\b(\d{1,3}(?:\.\d{1,3}){3})\b/.exec(c);
-        if (m) ips.add(m[1]);
+        // Adayın adres alanı (5. sütun): IPv6 adres de sızıntıdır; ".local" (mDNS) adları gerçek IP değildir.
+        const addr = / typ srflx/.test(c) && c.split(' ')[4];
+        if (addr && !addr.endsWith('.local')) ips.add(addr);
       };
     });
     await pc.setLocalDescription(await pc.createOffer());
@@ -967,10 +970,11 @@ function sitesWidth(urls) {
   probe.className = 'row';
   probe.style.cssText = 'position:absolute;visibility:hidden;display:block;width:auto';
   probe.innerHTML = `<div class="sites"><div class="sl" style="display:inline-flex">${urls.map((u) => `<span class="site">${esc(siteInfo(u).short)} 9.9s</span>`).join('')}</div></div>`;
-  rowsEl.append(probe);
+  $('#rows').append(probe);
   const w = Math.ceil(probe.querySelector('.sl').getBoundingClientRect().width);
   probe.remove();
-  tbody.style.setProperty('--sites-w', Math.min(Math.max(w, 70), 440) + 'px');
+  if (!w && urls.length) return; // liste görünümü gizliyken ölçülemez; showView('list') yeniden ölçer
+  $('#tbody').style.setProperty('--sites-w', Math.min(Math.max(w, 70), 440) + 'px');
 }
 
 function renderSiteSettings() {
@@ -1076,7 +1080,8 @@ $('#settingsForm').addEventListener('submit', async (e) => {
     if (!inp) continue;
     if (inp.type === 'checkbox') s[k] = inp.checked;
     else if (inp.type === 'number') s[k] = +inp.value;
-    else if (k === 'bypass' || k === 'onlySites') s[k] = inp.value.split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+    else if (k === 'bypass') s[k] = inp.value.split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+    else if (k === 'onlySites') s[k] = [...new Set(inp.value.split(/\r?\n/).map(cleanSiteEntry).filter(Boolean))];
     else s[k] = inp.value.trim();
   }
   if (!/^http:\/\//i.test(s.judgeUrl)) return toast(t('toast.judgeHttp'), 'err');

@@ -42,6 +42,15 @@ export function activeCheckHost(token, nonce) {
   return `pxa${token.slice(0, 10)}-${nonce}.${HTTPS_CHECK_DOMAIN}`;
 }
 
+// "Yalnızca bu siteler" girişini alan adına indirir: "https://www.YouTube.com/watch" → "youtube.com"
+// (baştaki "www." atılır; düz alan adı alt alan adlarını zaten kapsar).
+// Joker (*.ornek.com), CIDR (10.0.0.0/8) ve <local> olduğu gibi kalır.
+export function cleanSiteEntry(x) {
+  x = String(x || '').trim();
+  if (!x || x === '<local>' || /^\d{1,3}(\.\d{1,3}){3}\/\d{1,2}$/.test(x)) return x;
+  return x.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/[/?#].*$/, '').replace(/:\d+$/, '').replace(/^\.+|\.+$/g, '').replace(/^www\./i, '').toLowerCase();
+}
+
 export function directMarker(token) {
   return `__pxd${token}=1`;
 }

@@ -69,12 +69,21 @@ export function parseManualList(text, defaultType = 'http') {
     }
     let user, pass, host, port;
     const at = line.lastIndexOf('@');
+    // Şifre ":" içerebilir: kullanıcı adı ilk ":"e kadardır, şifre geri kalanıdır.
+    const cred = (s) => {
+      const c = s.indexOf(':');
+      return c === -1 ? [s, ''] : [s.slice(0, c), s.slice(c + 1)];
+    };
     if (at !== -1) {
-      [user, pass] = line.slice(0, at).split(':');
+      [user, pass] = cred(line.slice(0, at));
       [host, port] = line.slice(at + 1).split(':');
+    } else if (line.includes(':')) {
+      // ip:port[:kullanıcı:şifre] — porttan sonra boşlukla gelen sütunlar (ülke, tür…) kimlik bilgisi sayılmaz.
+      const [hp, ...rest] = line.split(/\s+/)[0].split(':');
+      [host, port] = [hp, rest[0]];
+      if (rest.length > 2) [user, pass] = [rest[1], rest.slice(2).join(':')];
     } else {
-      const parts = line.split(/[:\s]+/);
-      [host, port, user, pass] = parts;
+      [host, port] = line.split(/\s+/); // "ip port ülke …": yalnızca ilk iki sütun
     }
     port = parseInt(port, 10);
     if (!host || !/^[a-z0-9.-]+$/i.test(host) || !validPort(port)) continue;
