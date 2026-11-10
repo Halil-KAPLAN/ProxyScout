@@ -13,6 +13,6 @@
     "publish:edge": "node tools/publish.mjs edge"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=26"
   }
 }

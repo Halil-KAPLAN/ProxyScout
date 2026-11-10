@@ -137,7 +137,7 @@ To use your own Google client (for example in a fork), see
 ## Development
 
 No build step: edit `extension/` and reload the extension. `npm test` runs the unit tests;
-`npm run build` (Node.js 20+, no dependencies) creates the store packages in `dist/`. Building, tests,
+`npm run build` (Node.js 26+, no dependencies) creates the store packages in `dist/`. Building, tests,
 releases and store setup: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).
 
 ## Privacy

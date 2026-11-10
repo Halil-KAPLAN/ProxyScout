@@ -27,10 +27,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 26
       - run: npm test
 
   check-credentials:
@@ -48,10 +48,10 @@ jobs:
       AMO_JWT_ISSUER: ${{ secrets.AMO_JWT_ISSUER }}
       AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 26
       - name: Chrome Web Store anahtarları
         run: node tools/publish.mjs chrome --check
       - name: Edge Add-ons anahtarları
@@ -72,10 +72,10 @@ jobs:
       firefox_zip: ${{ steps.build.outputs.firefox_zip }}
       opera_zip: ${{ steps.build.outputs.opera_zip }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 26
       - name: Sürüm yeni mi?
         id: ver
         run: |
@@ -91,7 +91,7 @@ jobs:
         id: build
         if: steps.ver.outputs.new == 'true'
         run: node tools/build-zip.mjs
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: steps.ver.outputs.new == 'true'
         with:
           name: package
@@ -118,11 +118,11 @@ jobs:
       CWS_PUBLISHER_ID: ${{ secrets.CWS_PUBLISHER_ID }}
       CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
-      - uses: actions/download-artifact@v4
+          node-version: 26
+      - uses: actions/download-artifact@v8
         with:
           name: package
           path: dist
@@ -139,11 +139,11 @@ jobs:
       EDGE_API_KEY: ${{ secrets.EDGE_API_KEY }}
       VERSION: ${{ needs.release.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
-      - uses: actions/download-artifact@v4
+          node-version: 26
+      - uses: actions/download-artifact@v8
         with:
           name: package
           path: dist
@@ -159,11 +159,11 @@ jobs:
       AMO_JWT_SECRET: ${{ secrets.AMO_JWT_SECRET }}
       VERSION: ${{ needs.release.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
-      - uses: actions/download-artifact@v4
+          node-version: 26
+      - uses: actions/download-artifact@v8
         with:
           name: package
           path: dist

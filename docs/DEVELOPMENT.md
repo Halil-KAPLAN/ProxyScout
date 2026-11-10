@@ -50,7 +50,7 @@ node tests/bench.mjs <puppeteer folder> [proxies per group]
 
 These instructions are also for add-on reviewers.
 
-- **Requirements:** any OS (Windows, macOS or Linux) with **Node.js 20 or newer** (tested with 22.14).
+- **Requirements:** any OS (Windows, macOS or Linux) with **Node.js 26 or newer**.
   No npm packages are needed: the build has no dependencies and no network access.
 - **Command:** `node tools/build-zip.mjs` (same as `npm run build`).
 - **Output:**

@@ -138,7 +138,7 @@ Kendi Google istemcinizi kullanmak için (ör. bir çatalda):
 ## Geliştirme
 
 Derleme adımı yoktur: `extension/` klasörünü düzenleyip eklentiyi yenileyin. `npm test` birim
-testlerini çalıştırır; `npm run build` (Node.js 20+, bağımlılık yok) mağaza paketlerini `dist/`
+testlerini çalıştırır; `npm run build` (Node.js 26+, bağımlılık yok) mağaza paketlerini `dist/`
 klasörüne üretir. Derleme, testler, yayın ve mağaza kurulumu: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
 (İngilizce).
 
