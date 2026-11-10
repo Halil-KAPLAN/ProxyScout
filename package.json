@@ -2,7 +2,7 @@
   "name": "proxyscout",
   "version": "1.2.7",
   "private": true,
-  "description": "Ücretsiz proxy listelerini indirip test eden ve tek tıkla tarayıcı trafiğini yönlendiren Chrome/Edge eklentisi",
+  "description": "Browser extension for Chrome, Edge, Firefox and Opera that downloads free proxy lists, tests them over HTTP and HTTPS and routes browser traffic through a working proxy in one click",
   "license": "GPL-3.0-only",
   "type": "module",
   "scripts": {
